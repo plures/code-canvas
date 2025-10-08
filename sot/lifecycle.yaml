@@ -12,6 +12,7 @@ states:
       - "tools/**"
       - "README.md"
       - ".gitignore"
+      - "CHANGELOG.md"
     requiredChores:
       - whenAnyMatches: ["designs/**", "sot/canvas/**"]
         mustAlsoChange: ["tests/**"]
@@ -24,6 +25,8 @@ states:
       - "storybook/**"
       - "tools/**"
       - "deno.json"
+      - "docs/**"
+      - "CHANGELOG.md"
     requiredChores:
       - whenAnyMatches: ["src/**"]
         mustAlsoChange: ["tests/**"]

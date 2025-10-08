@@ -1,7 +1,9 @@
 {
   "tasks": {
     "validate": "deno run -A tools/guardian.ts",
-    "prepare-hooks": "deno run -A tools/tasks.ts install-hooks"
+    "prepare-hooks": "deno run -A tools/tasks.ts install-hooks",
+    "render-canvas": "deno run -A tools/canvas-renderer.ts",
+    "render-all": "deno run -A tools/canvas-renderer.ts --all"
   },
   "compilerOptions": {
     "strict": true
