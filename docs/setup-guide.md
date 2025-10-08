@@ -1,151 +1,68 @@
-# Code Canvas Setup Guide
+# Code Canvas Quick Start
 
 ## Prerequisites
+- Install Deno 2+ from [deno.land](https://deno.land/)
+- Ensure you're in a git repository (`git init` if needed)
 
-1. **Install Deno 2+**
-   - Download from [deno.land](https://deno.land/)
-   - Verify installation: `deno --version`
+## Setup Steps
 
-2. **Git Repository**
-   - Ensure you're in a git repository
-   - If not: `git init`
+1. **Install Git Hooks**
+   ```bash
+   deno task prepare-hooks
+   ```
 
-## Quick Setup
+2. **Configure Activity** - Edit `sot/state/activity.yaml`:
+   ```yaml
+   activity: design  # design, implementation, or release
+   actor: human
+   ```
 
-### 1. Install Git Hooks
-```bash
-deno task prepare-hooks
-```
-This installs the pre-commit hook that validates changes against your FSM lifecycle.
-
-**Note for Initial Setup**: For the very first commit, you may need to use `git commit --no-verify` to bypass the guardian while establishing the baseline project structure.
-
-### 2. Configure Your Activity
-Edit `sot/state/activity.yaml` to set your current development phase:
-```yaml
-activity: design  # or 'implementation' or 'release'
-actor: human
-note: "Working on initial design"
-since: "2025-10-07T21:20:17.776103Z"
-```
-
-### 3. Validate Setup
-```bash
-deno task validate
-```
-
-## Project Structure
-
-```
-code-canvas/
-├── sot/                    # Single Source of Truth
-│   ├── lifecycle.yaml      # FSM states and transitions
-│   ├── rules.yaml          # Project rules and chores
-│   ├── state/
-│   │   ├── activity.yaml   # Current development activity
-│   │   └── history.yaml    # Activity change history
-│   ├── canvas/
-│   │   └── *.canvas.yaml   # Visual design canvases
-│   ├── instructions/
-│   │   └── agent-contract.md # AI agent behavior rules
-│   └── schemas/
-│       ├── canvas.schema.yaml
-│       └── lifecycle.schema.yaml
-├── designs/                # Design documentation
-├── tests/                 # Test specifications
-├── tools/                 # Development tools
-│   ├── guardian.ts        # Pre-commit validator
-│   └── tasks.ts           # Utility tasks
-├── docs/                  # Project documentation
-└── .githooks/
-    └── pre-commit         # Git hook script
-```
+3. **Validate Setup**
+   ```bash
+   deno task validate
+   ```
 
 ## Development Workflow
 
-### 1. Design Phase
-- Edit files in `sot/`, `designs/`, `sot/canvas/`
-- Create or update test specifications
-- Commit changes (guardian validates against FSM)
+**Design Phase**: Edit `sot/`, `designs/`, `docs/`, `tests/` - plan and document
 
-### 2. Implementation Phase
-- Switch activity: Update `sot/state/activity.yaml`
-- Edit `src/` files (must also update `tests/`)
-- Guardian enforces test-first development
+**Implementation Phase**: Switch activity, edit `src/` + `tests/` - code with tests
 
-### 3. Release Phase
-- Update version in `package.json`
-- Must also update `CHANGELOG.md`
-- Guardian enforces release documentation
+**Release Phase**: Update `package.json` + `CHANGELOG.md` - prepare releases
 
-## Commands Reference
+## FSM States & Rules
 
-| Command | Description |
-|---------|-------------|
-| `deno task validate` | Validate staged changes against current activity |
-| `deno task prepare-hooks` | Install git pre-commit hook |
-
-## FSM States
-
-### Design
-- **Allowed paths**: `sot/**`, `designs/**`, `sot/canvas/**`, `instructions/**`
-- **Required chores**: When designs change, must also update tests
-
-### Implementation  
-- **Allowed paths**: `src/**`, `tests/**`, `sot/**`, `storybook/**`
-- **Required chores**: When src changes, must also update tests
-
-### Release
-- **Allowed paths**: `CHANGELOG.md`, `package.json`, `sot/**`
-- **Required chores**: When package.json changes, must also update CHANGELOG.md
+| Activity | Allowed Paths | Required Chores |
+|----------|---------------|-----------------|
+| design | `sot/**`, `designs/**`, `docs/**`, `tests/**` | Design changes → update tests |
+| implementation | `src/**`, `tests/**`, `sot/**` | Code changes → update tests |
+| release | `CHANGELOG.md`, `package.json`, `sot/**` | Version bump → update changelog |
 
 ## Canvas Files
 
-Canvas files (`sot/canvas/*.canvas.yaml`) define visual documentation with:
-
-- **Nodes**: FSMs, controls, documents, boxes
-- **Edges**: Relationships between components
-- **References**: Links to actual files
-
-Example:
+Create visual documentation in `sot/canvas/*.yaml`:
 ```yaml
 nodes:
   - id: app-fsm
     type: fsm
-    label: App Lifecycle
     x: 100
     y: 60
-    w: 240
-    h: 160
     ref: "sot/lifecycle.yaml"
-
 edges:
   - from: design-doc
     to: app-fsm
-    label: guides
-    kind: docs
+    kind: guides
 ```
 
+## Commands
+- `deno task validate` - Validate changes against FSM and rules
+- `deno task prepare-hooks` - Install pre-commit validation
+
+## Documentation
+- [Rules Engine](./rules-engine.md) - Invariants, chores, constraints
+- [MVP Roadmap](./mvp-roadmap.md) - Development roadmap
+
 ## Troubleshooting
-
-### Pre-commit Hook Issues
-- **Windows**: Hooks should work without chmod, guardian handles this automatically
-- **Permission errors**: Ensure git repository is properly initialized
-- **Path issues**: Run commands from project root directory
-
-### FSM Validation Failures
-- Check current activity in `sot/state/activity.yaml`
-- Verify file changes match allowed paths for current state
-- Ensure required chores are completed (e.g., update tests when changing designs)
-
-### Agent Contract Enforcement
-- AI agents must respect current activity constraints
-- See `sot/instructions/agent-contract.md` for behavior rules
-- Agents should refuse work outside current FSM state
-
-## Next Steps
-
-1. Review the [MVP Roadmap](./mvp-roadmap.md)
-2. Customize `sot/lifecycle.yaml` for your project needs
-3. Create canvas files for your specific workflows
-4. Set up continuous integration with the validation tools
+- **Hook issues**: Ensure git repo root, Windows chmod handled automatically
+- **FSM failures**: Check activity in `sot/state/activity.yaml`, complete required chores
+- **First commit**: Use `git commit --no-verify` for initial project setup
