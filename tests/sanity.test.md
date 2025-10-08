@@ -6,5 +6,6 @@
 
 ## Guardian Validation Tests
 
-- [ ] Guardian allows design file changes with corresponding test updates
-- [ ] Guardian blocks design changes without test updates
+- [x] Guardian allows design file changes with corresponding test updates
+- [x] Guardian blocks design changes without test updates  
+- [x] Guardian enforces test updates when design files are removed

@@ -9,6 +9,7 @@ states:
       - "instructions/**"
       - "docs/**"
       - "tests/**"
+      - "tools/**"
     requiredChores:
       - whenAnyMatches: ["designs/**", "sot/canvas/**"]
         mustAlsoChange: ["tests/**"]
