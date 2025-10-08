@@ -1,4 +1,7 @@
-- at: "2025-10-07T21:20:17.776165Z"
-  activity: design
-  actor: human
-  note: "Project initialized"
+history:
+  - timestamp: "2025-10-07T21:20:17.776165Z"
+    from: "initial"
+    to: "design"
+    actor: "human"
+    note: "Project initialized"
+    success: true

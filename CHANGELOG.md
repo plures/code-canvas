@@ -7,32 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2024-10-07 - Phase 1 Complete
+
 ### Added
 
-- Canvas rendering engine (`tools/canvas-renderer.ts`)
+- **FSM Transition Management System** (`tools/fsm-manager.ts`)
+  - State transition validation with guard conditions
+  - Transition history logging and rollback capability
+  - CLI interface for activity management
+  - Guard condition evaluation (file, git status, custom)
+- **Comprehensive Schema Validation** (`tools/schema-validator.ts`)
+  - YAML schema validation for all configuration files
+  - Cross-platform file pattern matching
+  - Detailed error reporting and validation summaries
+  - Activity and history schema definitions
+- **Canvas Rendering Engine** (`tools/canvas-renderer.ts`)
   - SVG generation from YAML canvas definitions
   - HTML wrapper with interactive features
   - Support for all node types (box, fsm, control, doc, database)
   - Edge rendering with different styles based on kind
   - Automatic layout with proper positioning and sizing
-- Canvas rendering documentation (`docs/canvas-rendering.md`)
-- New render-canvas task in `deno.json`
-- Authentication flow example canvas (`sot/canvas/auth-example.canvas.yaml`)
-- Git ignore file for output directory
+- **Unit Testing Suite** (`tests/guardian.test.ts`)
+  - Comprehensive test coverage for all core systems
+  - Integration tests for guardian, FSM, schema validation
+  - Cross-platform compatibility testing
+- **Enhanced CLI Commands**
+  - `deno task fsm` - FSM state management
+  - `deno task validate-config` - Configuration validation
+  - `deno task test` - Run complete test suite
+  - `deno task render-canvas` - Canvas rendering
 
 ### Changed
 
 - Updated demo canvas with proper positioning coordinates
 - Enhanced rules.yaml with output directory exclusion
 - Fixed button node positioning in demo canvas
+- Improved lifecycle.yaml to support all activity types
+- Enhanced guardian with better error messages
 
-### Technical Details
+### Phase 1 Completion
 
-- Canvas renderer uses SVG for scalable vector graphics
-- HTML wrapper provides interactivity and styling
-- Supports custom colors, sizes, and positioning
-- Generates both standalone SVG and embedded HTML output
-- Output directory structure: `output/{canvas-name}/`
+- ✅ Enhanced Guardian Validation with complex path matching
+- ✅ FSM Transition Logic with guard conditions and history
+- ✅ Configuration Management with schema validation
+- ✅ Unit testing coverage for all core functionality
+- ✅ Cross-platform Windows/Mac/Linux compatibility
 
 ## [0.1.0] - 2024-10-07
 
