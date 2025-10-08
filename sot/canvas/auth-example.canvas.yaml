@@ -1,0 +1,96 @@
+nodes:
+  - id: user-interface
+    type: doc
+    label: UI Design
+    x: 50
+    y: 50
+    w: 200
+    h: 80
+    ref: "designs/ui.md"
+  
+  - id: auth-fsm
+    type: fsm
+    label: Authentication FSM
+    x: 300
+    y: 30
+    w: 180
+    h: 120
+    ref: "sot/auth-lifecycle.yaml"
+  
+  - id: login-component
+    type: control
+    label: LoginForm
+    x: 50
+    y: 180
+    w: 160
+    h: 80
+    props:
+      framework: "React"
+      validation: true
+    ref: "src/components/LoginForm.tsx"
+  
+  - id: user-database
+    type: database
+    label: Users DB
+    x: 300
+    y: 200
+    w: 140
+    h: 100
+    props:
+      type: "PostgreSQL"
+      encrypted: true
+    ref: "schema/users.sql"
+  
+  - id: api-gateway
+    type: box
+    label: API Gateway
+    x: 520
+    y: 120
+    w: 160
+    h: 80
+    ref: "src/api/gateway.ts"
+  
+  - id: auth-tests
+    type: doc
+    label: Auth Test Suite
+    x: 520
+    y: 250
+    w: 180
+    h: 70
+    ref: "tests/auth.test.ts"
+
+edges:
+  - from: user-interface
+    to: login-component
+    kind: implements
+    label: "UI specs"
+  
+  - from: login-component
+    to: auth-fsm
+    kind: triggers
+    label: "login event"
+  
+  - from: auth-fsm
+    to: user-database
+    kind: guards
+    label: "validate user"
+  
+  - from: user-database
+    to: api-gateway
+    kind: implements
+    label: "user data"
+  
+  - from: auth-tests
+    to: login-component
+    kind: tests
+    label: "component tests"
+  
+  - from: auth-tests
+    to: auth-fsm
+    kind: tests
+    label: "FSM tests"
+  
+  - from: user-interface
+    to: auth-tests
+    kind: docs
+    label: "test scenarios"

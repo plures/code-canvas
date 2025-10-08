@@ -10,6 +10,10 @@ nodes:
   - id: btn
     type: control
     label: SaveButton
+    x: 100
+    y: 280
+    w: 180
+    h: 60
   - id: db
     type: database
     label: UserDB

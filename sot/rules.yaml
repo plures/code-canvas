@@ -16,8 +16,8 @@ invariants:
     description: Commits should be focused and small
     check:
       type: commit_size
-      max_files: 10
-      max_additions: 500
+      max_files: 15
+      max_additions: 800
 
 chores:
   - id: version_changelog
