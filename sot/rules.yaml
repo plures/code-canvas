@@ -1,6 +1,58 @@
 # Project-wide invariants and chores
 invariants:
-  - description: Keep docs and tests small
-    check: "size(doc|test) <= 3000 tokens"
+  - id: small_docs
+    description: Keep docs and tests small for better context
+    check:
+      type: file_size
+      patterns: ["docs/**/*.md", "tests/**/*.md", "designs/**/*.md"]
+      max_lines: 150
+      max_chars: 3000
+  - id: yaml_valid
+    description: All YAML files must be valid
+    check:
+      type: yaml_syntax
+      patterns: ["sot/**/*.yaml", "**/*.canvas.yaml"]
+  - id: no_large_commits
+    description: Commits should be focused and small
+    check:
+      type: commit_size
+      max_files: 10
+      max_additions: 500
+
 chores:
-  version_bump_requires_changelog: true
+  - id: version_changelog
+    description: Version bumps require changelog updates
+    when:
+      patterns: ["package.json", "deno.json"]
+      content_matches: ["version.*:"]
+    then:
+      must_change: ["CHANGELOG.md"]
+      
+  - id: schema_updates
+    description: Schema changes require example updates
+    when:
+      patterns: ["sot/schemas/*.yaml"]
+    then:
+      must_change: ["sot/canvas/*.yaml", "tests/**"]
+      
+  - id: tool_changes
+    description: Tool changes should include usage examples
+    when:
+      patterns: ["tools/*.ts"]
+    then:
+      must_change: ["docs/**", "README.md"]
+
+constraints:
+  - id: design_phase_limits
+    description: Design phase should focus on planning
+    applies_to_activity: design
+    forbidden_patterns: ["src/**/*.ts", "src/**/*.js"]
+    allowed_exceptions: ["src/types.ts", "src/schemas.ts"]
+    
+  - id: implementation_requires_tests
+    description: Implementation must include tests
+    applies_to_activity: implementation
+    when:
+      patterns: ["src/**"]
+    then:
+      must_also_change: ["tests/**"]

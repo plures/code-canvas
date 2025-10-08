@@ -5,7 +5,7 @@ Purpose: enforce lifecycle, tests-first, and conversation control for AI-assiste
 ## Key ideas
 - **sot/** is the single source of truth. Small, focused docs fit in context.
 - **FSM** controls allowed activities and file access.
-- **guardian** pre-commit gate: blocks invalid changes and missing chores (e.g., changelog on version bump).
+- **guardian** pre-commit gate with comprehensive rules engine: blocks invalid changes, enforces file size limits, validates YAML syntax, and ensures required chores are completed.
 - **logs/** capture agent runs and decisions to enable learning.
 
 ## Quick start

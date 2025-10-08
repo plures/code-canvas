@@ -1,0 +1,62 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Rules Configuration
+type: object
+properties:
+  invariants:
+    type: array
+    items:
+      type: object
+      required: [id, description, check]
+      properties:
+        id: { type: string }
+        description: { type: string }
+        check:
+          type: object
+          required: [type]
+          properties:
+            type: { type: string, enum: ["file_size", "yaml_syntax", "commit_size", "pattern_match"] }
+            patterns: { type: array, items: { type: string } }
+            max_lines: { type: number }
+            max_chars: { type: number }
+            max_files: { type: number }
+            max_additions: { type: number }
+            regex: { type: string }
+            
+  chores:
+    type: array
+    items:
+      type: object
+      required: [id, description, when, then]
+      properties:
+        id: { type: string }
+        description: { type: string }
+        when:
+          type: object
+          properties:
+            patterns: { type: array, items: { type: string } }
+            content_matches: { type: array, items: { type: string } }
+        then:
+          type: object
+          properties:
+            must_change: { type: array, items: { type: string } }
+            must_also_change: { type: array, items: { type: string } }
+            
+  constraints:
+    type: array
+    items:
+      type: object
+      required: [id, description]
+      properties:
+        id: { type: string }
+        description: { type: string }
+        applies_to_activity: { type: string }
+        forbidden_patterns: { type: array, items: { type: string } }
+        allowed_exceptions: { type: array, items: { type: string } }
+        when:
+          type: object
+          properties:
+            patterns: { type: array, items: { type: string } }
+        then:
+          type: object
+          properties:
+            must_also_change: { type: array, items: { type: string } }

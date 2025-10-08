@@ -10,7 +10,7 @@ properties:
       required: [id, type, x, y, w, h]
       properties:
         id: { type: string }
-        type: { type: string, enum: ["box", "fsm", "control", "doc"] }
+        type: { type: string, enum: ["box", "fsm", "control", "doc", "database"] }
         label: { type: string }
         x: { type: number }
         y: { type: number }
