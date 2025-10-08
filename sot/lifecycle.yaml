@@ -1,0 +1,42 @@
+initial: design
+states:
+  - id: design
+    label: Design
+    allowedPaths:
+      - "sot/**"
+      - "designs/**"
+      - "sot/canvas/**"
+      - "instructions/**"
+      - "docs/**"
+    requiredChores:
+      - whenAnyMatches: ["designs/**", "sot/canvas/**"]
+        mustAlsoChange: ["tests/**"]
+  - id: implementation
+    label: Implementation
+    allowedPaths:
+      - "src/**"
+      - "tests/**"
+      - "sot/**"
+      - "storybook/**"
+    requiredChores:
+      - whenAnyMatches: ["src/**"]
+        mustAlsoChange: ["tests/**"]
+  - id: release
+    label: Release
+    allowedPaths:
+      - "CHANGELOG.md"
+      - "package.json"
+      - "sot/**"
+    requiredChores:
+      - whenAnyMatches: ["package.json"]
+        mustAlsoChange: ["CHANGELOG.md"]
+transitions:
+  - from: design
+    to: implementation
+    guard: "rule: ok :- tests(updated) & designs(approved)."
+  - from: implementation
+    to: release
+    guard: "rule: ok :- tests(passing) & coverage(>=90)."
+  - from: release
+    to: design
+    guard: "ok."

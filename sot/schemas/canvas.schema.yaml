@@ -1,0 +1,32 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: YAMLCanvas
+type: object
+required: [nodes, edges]
+properties:
+  nodes:
+    type: array
+    items:
+      type: object
+      required: [id, type, x, y, w, h]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: ["box", "fsm", "control", "doc"] }
+        label: { type: string }
+        x: { type: number }
+        y: { type: number }
+        w: { type: number }
+        h: { type: number }
+        props: { type: object, additionalProperties: true }
+        ref:
+          description: Path to a document defining the object (FSM, design, tests, code). 
+          type: string
+  edges:
+    type: array
+    items:
+      type: object
+      required: [from, to]
+      properties:
+        from: { type: string }
+        to: { type: string }
+        label: { type: string }
+        kind: { type: string, enum: ["triggers", "guards", "tests", "implements", "docs"] }

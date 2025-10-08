@@ -1,0 +1,36 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: LifecycleFSM
+type: object
+required: [states, transitions, initial]
+properties:
+  initial: { type: string }
+  states:
+    type: array
+    items:
+      type: object
+      required: [id, label]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        allowedPaths:
+          description: Glob patterns allowed to change in this state.
+          type: array
+          items: { type: string }
+        requiredChores:
+          description: Chores that must hold if certain files are staged.
+          type: array
+          items:
+            type: object
+            required: [whenAnyMatches, mustAlsoChange]
+            properties:
+              whenAnyMatches: { type: array, items: { type: string } }
+              mustAlsoChange: { type: array, items: { type: string } }
+  transitions:
+    type: array
+    items:
+      type: object
+      required: [from, to, guard]
+      properties:
+        from: { type: string }
+        to: { type: string }
+        guard: { type: string, description: "Sudolang or JS expression string" }

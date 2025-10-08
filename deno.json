@@ -1,0 +1,9 @@
+{
+  "tasks": {
+    "validate": "deno run -A tools/guardian.ts",
+    "prepare-hooks": "deno run -A tools/tasks.ts install-hooks"
+  },
+  "compilerOptions": {
+    "strict": true
+  }
+}

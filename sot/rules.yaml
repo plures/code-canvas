@@ -1,0 +1,6 @@
+# Project-wide invariants and chores
+invariants:
+  - description: Keep docs and tests small
+    check: "size(doc|test) <= 3000 tokens"
+chores:
+  version_bump_requires_changelog: true
