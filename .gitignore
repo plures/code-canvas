@@ -1,0 +1,17 @@
+# Generated canvas output
+output/
+
+# Deno
+deno.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
