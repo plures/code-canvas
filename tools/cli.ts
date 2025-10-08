@@ -72,9 +72,50 @@ async function canvasList(): Promise<number> {
     }
     return 0;
   } catch (error) {
-    console.error("❌ Error reading canvas directory:", error.message);
+    const err = error as Error;
+    console.error("❌ Error reading canvas directory:", err.message);
     return 1;
   }
+}
+
+async function canvasServe(args: string[]): Promise<number> {
+  const parsed = parseArgs(args, {
+    boolean: ["help", "watch"],
+    string: ["file", "port"],
+    alias: { h: "help", f: "file", p: "port", w: "watch" },
+    default: { watch: true, port: "8080" },
+  });
+
+  if (parsed.help) {
+    console.log(`
+Usage: canvas serve [OPTIONS]
+
+Start interactive canvas server with live preview.
+
+Options:
+  --file, -f <path>  Canvas file to serve (default: demo.canvas.yaml)
+  --port, -p <port>  Port to listen on (default: 8080)
+  --watch, -w        Enable auto-reload (default: true)
+  --help, -h         Show this help
+
+Examples:
+  canvas serve
+  canvas serve --file auth-example.canvas.yaml
+  canvas serve --port 3000
+`);
+    return 0;
+  }
+
+  const cmd = ["deno", "run", "-A", "tools/canvas-server.ts"];
+  if (parsed.file) cmd.push("--file", parsed.file);
+  if (parsed.port) cmd.push("--port", parsed.port);
+  if (!parsed.watch) cmd.push("--no-watch");
+
+  const process = new Deno.Command(cmd[0], {
+    args: cmd.slice(1),
+  });
+  const { code } = await process.output();
+  return code;
 }
 
 // Activity commands
@@ -263,6 +304,7 @@ const commands: Record<string, Command> = {
     usage: "canvas <command> [options]",
     examples: [
       "canvas render --all",
+      "canvas serve --port 8080",
       "canvas list",
     ],
     action: async (args: string[]) => {
@@ -270,10 +312,12 @@ const commands: Record<string, Command> = {
       switch (subcommand) {
         case "render":
           return await canvasRender(rest);
+        case "serve":
+          return await canvasServe(rest);
         case "list":
           return await canvasList();
         default:
-          console.log("Unknown canvas command. Try: render, list");
+          console.log("Unknown canvas command. Try: render, serve, list");
           return 1;
       }
     },

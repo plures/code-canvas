@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Interactive Canvas Server** (`tools/canvas-server.ts`)
+  - Web-based live preview with auto-reload
+  - Interactive node selection and highlighting
+  - Hover tooltips with node details
+  - Search and filter functionality
+  - Pan/zoom controls and export options
+  - Dark mode interface optimized for viewing
+- **Enhanced CLI** - Added `canvas serve` subcommand
+- **Canvas Server Documentation** (`docs/canvas-server.md`)
+  - Complete usage guide
+  - Interface overview and features
+  - Development workflow examples
 - **Unified CLI Interface** (`tools/cli.ts`)
   - Single `canvas` command for all operations
   - Subcommands: canvas, activity, validate, init
