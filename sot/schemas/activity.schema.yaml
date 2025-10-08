@@ -1,0 +1,25 @@
+type: object
+description: "Current project activity state"
+required:
+  - activity
+  - actor
+  - note
+  - since
+properties:
+  activity:
+    type: string
+    description: "Current activity ID that must match a state in lifecycle.yaml"
+    enum: ["design", "implementation", "release"]
+  actor:
+    type: string
+    description: "Name or identifier of the person/system that set this activity"
+    minLength: 1
+  note:
+    type: string
+    description: "Human-readable description of why this activity was set"
+    minLength: 1
+  since:
+    type: string
+    description: "ISO 8601 timestamp when this activity was set"
+    pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{6})?Z?$"
+additionalProperties: false
