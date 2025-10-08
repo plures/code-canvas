@@ -1,0 +1,68 @@
+stages:
+  - validate
+  - test
+  - render
+
+# Validate guardian rules and schemas
+validate:guardian:
+  stage: validate
+  image: denoland/deno:ubuntu-2.0.0
+  script:
+    - deno task prepare-hooks
+    - deno task canvas validate check
+    - deno task canvas validate config
+    - deno task canvas activity status
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Run unit tests
+test:unit:
+  stage: test
+  image: denoland/deno:ubuntu-2.0.0
+  script:
+    - deno task test
+  coverage: '/\d+\.\d+% coverage/'
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Render canvas files
+render:canvases:
+  stage: render
+  image: denoland/deno:ubuntu-2.0.0
+  script:
+    - deno task canvas canvas render --all
+  artifacts:
+    paths:
+      - output/
+    expire_in: 30 days
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Activity-specific validation
+validate:activity:
+  stage: validate
+  image: denoland/deno:ubuntu-2.0.0
+  script:
+    - |
+      ACTIVITY=$(grep 'activity:' sot/state/activity.yaml | cut -d':' -f2 | tr -d ' ')
+      echo "Current activity: $ACTIVITY"
+      
+      case $ACTIVITY in
+        design)
+          echo "✅ Design activity - documentation changes allowed"
+          ;;
+        implementation)
+          echo "✅ Implementation activity - code changes allowed"
+          ;;
+        release)
+          echo "✅ Release activity - version changes allowed"
+          ;;
+        *)
+          echo "❌ Unknown activity: $ACTIVITY"
+          exit 1
+          ;;
+      esac
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"

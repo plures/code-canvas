@@ -1,0 +1,73 @@
+name: Code Canvas Validation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  validate:
+    name: Validate Code Canvas Rules
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+
+      - name: Install Git Hooks
+        run: deno task prepare-hooks
+
+      - name: Validate Guardian Rules
+        run: deno task canvas validate check
+
+      - name: Validate YAML Schemas
+        run: deno task canvas validate config
+
+      - name: Check FSM State
+        run: deno task canvas activity status
+
+      - name: Run Tests
+        run: deno task test
+
+      - name: Render Canvases
+        run: deno task canvas canvas render --all
+
+      - name: Upload Canvas Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-canvases
+          path: output/
+          retention-days: 30
+
+  activity-check:
+    name: Check Activity Constraints
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+
+      - name: Verify Activity Allows PR
+        run: |
+          ACTIVITY=$(grep 'activity:' sot/state/activity.yaml | cut -d':' -f2 | tr -d ' ')
+          echo "Current activity: $ACTIVITY"
+          
+          if [ "$ACTIVITY" = "release" ]; then
+            echo "✅ Release activity - PR allowed"
+          elif [ "$ACTIVITY" = "implementation" ]; then
+            echo "✅ Implementation activity - PR allowed"
+          else
+            echo "⚠️  Activity is $ACTIVITY - ensure PR contains appropriate changes"
+          fi

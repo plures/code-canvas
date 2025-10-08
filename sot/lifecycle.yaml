@@ -24,6 +24,7 @@ states:
       - "sot/**"
       - "storybook/**"
       - "tools/**"
+      - "templates/**"
       - "deno.json"
       - "docs/**"
       - "CHANGELOG.md"
