@@ -18,6 +18,8 @@ deno task prepare-hooks
 ```
 This installs the pre-commit hook that validates changes against your FSM lifecycle.
 
+**Note for Initial Setup**: For the very first commit, you may need to use `git commit --no-verify` to bypass the guardian while establishing the baseline project structure.
+
 ### 2. Configure Your Activity
 Edit `sot/state/activity.yaml` to set your current development phase:
 ```yaml

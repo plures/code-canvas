@@ -27,6 +27,7 @@
   - [ ] Validate YAML schema compliance for SoT files
   - [ ] Add dry-run mode for testing changes
   - [x] Fix Windows compatibility for file permissions
+  - [x] Cross-platform path separator handling
 
 - [ ] **FSM Transition Logic**
   - [ ] Implement guard condition evaluation
@@ -85,10 +86,10 @@
 
 ### **Immediate Priority (Week 1-2)**
 1. [x] Fix guardian.ts path resolution for Windows compatibility
-2. [ ] Add comprehensive error handling in guardian
+2. [x] Add comprehensive error handling in guardian  
 3. [ ] Create validation for existing YAML files
 4. [ ] Add unit tests for guardian logic
-5. [ ] Document setup process for new projects
+5. [x] Document setup process for new projects
 
 ### **Short-term (Month 1)**
 1. [ ] Implement rules.yaml processing
