@@ -29,7 +29,11 @@ const staged = new TextDecoder().decode(out.stdout).trim().split("\n").filter(Bo
 const matchers = async (patterns: string[]) => {
   const matched = new Set<string>();
   for (const pattern of patterns) {
-    for await (const e of expandGlob(pattern, { root })) matched.add(e.path.replace(root + "/", ""));
+    for await (const e of expandGlob(pattern, { root })) {
+      // Normalize path separators to forward slash for cross-platform compatibility
+      const relativePath = e.path.replace(root, "").replace(/^[\\\/]/, "").replace(/\\/g, "/");
+      matched.add(relativePath);
+    }
   }
   return matched;
 };
