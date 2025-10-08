@@ -1,5 +1,6 @@
 {
   "tasks": {
+    "canvas": "deno run -A tools/cli.ts",
     "validate": "deno run -A tools/guardian.ts",
     "prepare-hooks": "deno run -A tools/tasks.ts install-hooks",
     "render-canvas": "deno run -A tools/canvas-renderer.ts",

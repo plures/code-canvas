@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Unified CLI Interface** (`tools/cli.ts`)
+  - Single `canvas` command for all operations
+  - Subcommands: canvas, activity, validate, init
+  - Intuitive command structure with help text
+  - Better developer experience over separate tools
+- **CI/CD Templates** (`templates/ci-cd/`)
+  - GitHub Actions workflow with validation and artifact upload
+  - GitLab CI pipeline configuration
+  - Azure Pipelines configuration
+  - Activity-based validation checks
+- **Project Templates** (`templates/project/`)
+  - Basic and full project templates
+  - Easy initialization with `canvas init`
+  - Pre-configured FSM and guardian rules
+- **CLI Documentation** (`docs/cli-guide.md`)
+  - Complete command reference
+  - Usage examples and workflows
+  - Quick reference table
+
 ## [0.2.0] - 2024-10-07 - Phase 1 Complete
 
 ### Added
