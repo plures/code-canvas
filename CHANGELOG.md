@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Self-Managing Design Canvas System** (`tools/self-managing-canvas-server.ts`)
+  - Interactive architecture visualization with drill-down capability
+  - Visual representation of Code Canvas application itself (meta-canvas)
+  - Navigation stack for multi-level canvas exploration
+  - File viewer integration for in-browser code inspection
+  - VS Code integration for direct file editing from canvas
+  - Team collaboration support for human-AI development
+
+- **Architecture Canvas** (`sot/canvas/code-canvas-architecture.canvas.yaml`)
+  - Complete visual map of Code Canvas application components
+  - Self-referential design where canvas manages itself
+  - Drill-down links to implementation files and sub-canvases
+
 - **Interactive Canvas Editor** (`tools/canvas-server-v2.ts`, `tools/canvas-editor.html`)
   - Full drag-and-drop editing with grid snap (20px)
   - Create, edit, and delete nodes and edges via modals

@@ -1,0 +1,173 @@
+nodes:
+  # Core Application Components
+  - id: guardian
+    type: control
+    label: Guardian
+    x: 100
+    y: 100
+    w: 140
+    h: 80
+    ref: "tools/guardian.ts"
+    props:
+      description: "FSM validation and rules engine"
+      drillDown: "file"
+      
+  - id: fsm-manager
+    type: fsm
+    label: FSM Manager
+    x: 300
+    y: 100
+    w: 140
+    h: 80
+    ref: "tools/fsm-manager.ts"
+    props:
+      description: "Activity lifecycle management"
+      drillDown: "file"
+      
+  - id: canvas-server
+    type: control
+    label: Canvas Server V2
+    x: 500
+    y: 100
+    w: 140
+    h: 80
+    ref: "tools/canvas-server-v2.ts"
+    props:
+      description: "Interactive canvas editor"
+      drillDown: "file"
+      
+  - id: canvas-renderer
+    type: control
+    label: Canvas Renderer
+    x: 100
+    y: 220
+    w: 140
+    h: 80
+    ref: "tools/enhanced-canvas-renderer.ts"
+    props:
+      description: "SVG generation engine"
+      drillDown: "file"
+      
+  - id: jsoncanvas-compat
+    type: control
+    label: JSON Canvas Compat
+    x: 300
+    y: 220
+    w: 140
+    h: 80
+    ref: "tools/jsoncanvas-compat.ts"
+    props:
+      description: "Obsidian Canvas interop"
+      drillDown: "file"
+      
+  # Configuration & State
+  - id: lifecycle-config
+    type: fsm
+    label: Lifecycle
+    x: 500
+    y: 220
+    w: 120
+    h: 60
+    ref: "sot/lifecycle.yaml"
+    props:
+      description: "FSM state definitions"
+      drillDown: "canvas"
+      
+  - id: rules-config
+    type: database
+    label: Rules
+    x: 650
+    y: 220
+    w: 120
+    h: 60
+    ref: "sot/rules.yaml"
+    props:
+      description: "Validation rules"
+      drillDown: "file"
+      
+  # Canvas Designs
+  - id: demo-canvas
+    type: doc
+    label: Demo Canvas
+    x: 100
+    y: 340
+    w: 120
+    h: 60
+    ref: "sot/canvas/demo.canvas.yaml"
+    props:
+      description: "Example canvas design"
+      drillDown: "canvas"
+      
+  - id: auth-canvas
+    type: doc
+    label: Auth Canvas
+    x: 250
+    y: 340
+    w: 120
+    h: 60
+    ref: "sot/canvas/auth-example.canvas.yaml"
+    props:
+      description: "Authentication flow"
+      drillDown: "canvas"
+      
+  # Self-Reference
+  - id: meta-canvas
+    type: doc
+    label: Meta Canvas
+    x: 400
+    y: 340
+    w: 120
+    h: 60
+    ref: "sot/canvas/code-canvas-architecture.canvas.yaml"
+    props:
+      description: "This canvas (self-reference)"
+      drillDown: "canvas"
+      
+edges:
+  # Control flow
+  - from: guardian
+    to: fsm-manager
+    label: "validates transitions"
+    kind: guards
+    
+  - from: fsm-manager
+    to: lifecycle-config
+    label: "reads"
+    kind: implements
+    
+  - from: guardian
+    to: rules-config
+    label: "enforces"
+    kind: implements
+    
+  # Canvas system
+  - from: canvas-server
+    to: canvas-renderer
+    label: "uses"
+    kind: implements
+    
+  - from: canvas-server
+    to: jsoncanvas-compat
+    label: "converts"
+    kind: implements
+    
+  - from: canvas-renderer
+    to: demo-canvas
+    label: "renders"
+    kind: implements
+    
+  - from: canvas-renderer
+    to: auth-canvas
+    label: "renders"
+    kind: implements
+    
+  - from: canvas-renderer
+    to: meta-canvas
+    label: "renders"
+    kind: implements
+    
+  # Self-management loop
+  - from: meta-canvas
+    to: canvas-server
+    label: "manages via"
+    kind: triggers

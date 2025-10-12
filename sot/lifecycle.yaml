@@ -28,6 +28,8 @@ states:
       - "deno.json"
       - "docs/**"
       - "CHANGELOG.md"
+      - "README.md"
+      - ".github/**"
     requiredChores:
       - whenAnyMatches: ["src/**"]
         mustAlsoChange: ["tests/**"]
