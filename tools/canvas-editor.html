@@ -176,6 +176,55 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+        /* Resize handles */
+        .resize-handle {
+            fill: #569cd6;
+            stroke: #ffffff;
+            stroke-width: 1;
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .node:hover .resize-handle,
+        .node.selected .resize-handle {
+            opacity: 1;
+        }
+        .resize-handle.corner { cursor: nw-resize; }
+        .resize-handle.corner.se { cursor: se-resize; }
+        .resize-handle.edge-right { cursor: e-resize; }
+        .resize-handle.edge-bottom { cursor: s-resize; }
+        
+        /* Edge interaction styles */
+        .edge {
+            cursor: pointer;
+        }
+        .edge line {
+            pointer-events: stroke;
+            stroke-width: 6;  /* Larger hit area */
+            opacity: 0;       /* Invisible but clickable */
+        }
+        .edge .edge-visual {
+            pointer-events: none;
+        }
+        .edge text {
+            pointer-events: auto;
+            cursor: pointer;
+            user-select: none;
+        }
+        .edge:hover .edge-visual,
+        .edge.selected .edge-visual {
+            stroke: #4285f4 !important;
+            stroke-width: 3;
+        }
+        .edge:hover text,
+        .edge.selected text {
+            fill: #4285f4;
+            font-weight: bold;
+        }
+        .edge.selected .edge-visual {
+            filter: drop-shadow(0 0 3px #4285f4);
+        }
+        
         .modal {
             display: none;
             position: fixed;
@@ -311,6 +360,31 @@
         </div>
     </div>
     
+    <div class="modal" id="edge-edit-modal">
+        <div class="modal-content">
+            <h2>Edit Edge</h2>
+            <label>From Node</label>
+            <select id="edit-edge-from"></select>
+            <label>To Node</label>
+            <select id="edit-edge-to"></select>
+            <label>Edge Type</label>
+            <select id="edit-edge-kind">
+                <option value="implements">Implements - Implementation</option>
+                <option value="guards">Guards - Conditional check</option>
+                <option value="triggers">Triggers - Event/action</option>
+                <option value="tests">Tests - Verification</option>
+                <option value="docs">Docs - Documentation link</option>
+            </select>
+            <label>Label (optional)</label>
+            <input type="text" id="edit-edge-label" placeholder="Edge label">
+            <div class="btn-group">
+                <button class="btn" onclick="deleteEdge()" style="background: #e74c3c; color: white;">Delete</button>
+                <button class="btn" onclick="closeModal()">Cancel</button>
+                <button class="btn primary" onclick="confirmEdgeEdit()">Update</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
 // Canvas Editor - Interactive FSM-aware editing v2.0
 console.log('=== SCRIPT STARTED ===');
@@ -318,10 +392,18 @@ const GRID_SIZE = {{GRID_SIZE}};
 console.log('GRID_SIZE:', GRID_SIZE);
 let canvas = { nodes: [], edges: [] };
 let selectedNode = null;
+let selectedEdge = null;
 let isDragging = false;
 let dragNode = null;
 let dragOffset = { x: 0, y: 0 };
 let currentZoom = 1;
+
+// Resize state
+let isResizing = false;
+let resizeNode = null;
+let resizeHandle = null;
+let originalSize = { width: 0, height: 0 };
+let resizeStartPos = { x: 0, y: 0 };
 
 // Logging helper - sends to both console and server terminal
 function log(message, data) {
@@ -417,11 +499,57 @@ function initDragDrop() {
     
     // Mouse down on nodes
     svg.addEventListener('mousedown', (e) => {
-        log('SVG mousedown - target: ' + e.target.tagName + ', id: ' + e.target.id + ', pos: ' + e.clientX + ',' + e.clientY);
+        log('SVG mousedown - target: ' + e.target.tagName + ', classes: ' + e.target.className.baseVal + ', pos: ' + e.clientX + ',' + e.clientY);
         
         const target = e.target;
         if (!target) {
             log('No target element');
+            return;
+        }
+        
+        // Check if clicked on a resize handle
+        if (target.classList.contains('resize-handle')) {
+            e.preventDefault();
+            const nodeId = target.getAttribute('data-node-id');
+            const handleType = target.getAttribute('data-handle');
+            const node = canvas.nodes.find(n => n.id === nodeId);
+            
+            if (!node) {
+                log('ERROR: Node not found for resize handle - nodeId: ' + nodeId);
+                return;
+            }
+            
+            log('Starting resize - nodeId: ' + nodeId + ', handle: ' + handleType);
+            isResizing = true;
+            resizeNode = node;
+            resizeHandle = handleType;
+            originalSize.width = node.w || node.width || 120;
+            originalSize.height = node.h || node.height || 60;
+            
+            const rect = svg.getBoundingClientRect();
+            resizeStartPos.x = (e.clientX - rect.left) / currentZoom;
+            resizeStartPos.y = (e.clientY - rect.top) / currentZoom;
+            
+            svg.style.cursor = target.style.cursor || 'se-resize';
+            selectNode(nodeId);
+            return;
+        }
+        
+        // Check if clicked on an edge
+        const edgeEl = target.closest('.edge');
+        if (edgeEl) {
+            e.preventDefault();
+            const edgeIndex = edgeEl.getAttribute('data-edge-index');
+            const edge = canvas.edges[parseInt(edgeIndex)];
+            
+            if (!edge) {
+                log('ERROR: Edge not found for index - edgeIndex: ' + edgeIndex);
+                return;
+            }
+            
+            log('Clicked on edge - index: ' + edgeIndex + ', from: ' + edge.from + ', to: ' + edge.to);
+            selectEdge(parseInt(edgeIndex));
+            openEdgeEditModal(parseInt(edgeIndex));
             return;
         }
         
@@ -434,7 +562,7 @@ function initDragDrop() {
         }
         
         if (!nodeEl) {
-            log('Click was not on a node');
+            log('Click was not on a node or edge');
             return;
         }
         
@@ -446,7 +574,9 @@ function initDragDrop() {
             return;
         }
         
-        log('Starting drag - nodeId: ' + nodeId + ', pos: ' + node.x + ',' + node.y + ', size: ' + node.w + 'x' + node.h);
+        const nodeWidth = node.w || node.width || 120;
+        const nodeHeight = node.h || node.height || 60;
+        log('Starting drag - nodeId: ' + nodeId + ', pos: ' + node.x + ',' + node.y + ', size: ' + nodeWidth + 'x' + nodeHeight);
         
         isDragging = true;
         dragNode = node;
@@ -468,33 +598,96 @@ function initDragDrop() {
     
     // Mouse move
     svg.addEventListener('mousemove', (e) => {
-        if (!isDragging || !dragNode) return;
-        
         e.preventDefault();
         const rect = svg.getBoundingClientRect();
         const svgX = (e.clientX - rect.left) / currentZoom;
         const svgY = (e.clientY - rect.top) / currentZoom;
         
-        let newX = svgX - dragOffset.x;
-        let newY = svgY - dragOffset.y;
+        // Handle resizing
+        if (isResizing && resizeNode) {
+            const deltaX = svgX - resizeStartPos.x;
+            const deltaY = svgY - resizeStartPos.y;
+            
+            let newWidth = originalSize.width;
+            let newHeight = originalSize.height;
+            
+            switch(resizeHandle) {
+                case 'se': // Southeast corner
+                    newWidth = Math.max(40, originalSize.width + deltaX);
+                    newHeight = Math.max(20, originalSize.height + deltaY);
+                    break;
+                case 'nw': // Northwest corner
+                    newWidth = Math.max(40, originalSize.width - deltaX);
+                    newHeight = Math.max(20, originalSize.height - deltaY);
+                    resizeNode.x = resizeNode.x + (originalSize.width - newWidth);
+                    resizeNode.y = resizeNode.y + (originalSize.height - newHeight);
+                    break;
+                case 'e': // East edge (right)
+                    newWidth = Math.max(40, originalSize.width + deltaX);
+                    break;
+                case 's': // South edge (bottom)
+                    newHeight = Math.max(20, originalSize.height + deltaY);
+                    break;
+            }
+            
+            // Snap size to grid
+            newWidth = Math.round(newWidth / GRID_SIZE) * GRID_SIZE;
+            newHeight = Math.round(newHeight / GRID_SIZE) * GRID_SIZE;
+            
+            // Update node size (support both property formats)
+            if (resizeNode.hasOwnProperty('w') || !resizeNode.hasOwnProperty('width')) {
+                resizeNode.w = newWidth;
+                resizeNode.h = newHeight;
+            } else {
+                resizeNode.width = newWidth;
+                resizeNode.height = newHeight;
+            }
+            
+            log('Resizing - handle: ' + resizeHandle + ', size: ' + newWidth + 'x' + newHeight);
+            updateNodePosition(resizeNode);
+            updateEdges();
+            return;
+        }
         
-        // Snap to grid
-        const snappedX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
-        const snappedY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
-        
-        const dx = snappedX - dragNode.x;
-        const dy = snappedY - dragNode.y;
-        log('Dragging - raw: ' + newX + ',' + newY + ', snapped: ' + snappedX + ',' + snappedY + ', movement: ' + dx + ',' + dy);
-        
-        dragNode.x = Math.max(0, snappedX);
-        dragNode.y = Math.max(0, snappedY);
-        
-        updateNodePosition(dragNode);
-        updateEdges();
+        // Handle dragging
+        if (isDragging && dragNode) {
+            let newX = svgX - dragOffset.x;
+            let newY = svgY - dragOffset.y;
+            
+            // Snap to grid
+            const snappedX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+            const snappedY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+            
+            const dx = snappedX - dragNode.x;
+            const dy = snappedY - dragNode.y;
+            log('Dragging - raw: ' + newX + ',' + newY + ', snapped: ' + snappedX + ',' + snappedY + ', movement: ' + dx + ',' + dy);
+            
+            dragNode.x = Math.max(0, snappedX);
+            dragNode.y = Math.max(0, snappedY);
+            
+            updateNodePosition(dragNode);
+            updateEdges();
+        }
     });
     
     // Mouse up
     svg.addEventListener('mouseup', () => {
+        // Complete resize operation
+        if (isResizing && resizeNode) {
+            log('Resize ended - nodeId: ' + resizeNode.id + ', finalSize: ' + (resizeNode.w || resizeNode.width) + 'x' + (resizeNode.h || resizeNode.height));
+            
+            const nodeEl = document.getElementById(`node-${resizeNode.id}`);
+            if (nodeEl) nodeEl.style.opacity = '1';
+            
+            isResizing = false;
+            resizeNode = null;
+            resizeHandle = null;
+            svg.style.cursor = 'default';
+            showStatus('Node resized • Press Save to persist changes');
+            return;
+        }
+        
+        // Complete drag operation
         if (isDragging && dragNode) {
             log('Drag ended - nodeId: ' + dragNode.id + ', finalPos: ' + dragNode.x + ',' + dragNode.y);
             
@@ -510,6 +703,15 @@ function initDragDrop() {
     
     // Mouse leave
     svg.addEventListener('mouseleave', () => {
+        if (isResizing && resizeNode) {
+            log('Mouse left SVG during resize - nodeId: ' + resizeNode.id);
+            const nodeEl = document.getElementById(`node-${resizeNode.id}`);
+            if (nodeEl) nodeEl.style.opacity = '1';
+            isResizing = false;
+            resizeNode = null;
+            resizeHandle = null;
+            svg.style.cursor = 'default';
+        }
         if (isDragging && dragNode) {
             log('Mouse left SVG during drag - nodeId: ' + dragNode.id);
             const nodeEl = document.getElementById(`node-${dragNode.id}`);
@@ -523,35 +725,78 @@ function initDragDrop() {
     log('Drag & drop initialized - event listeners attached to SVG');
 }
 
-// Update node position in SVG
+// Update node position and size in SVG
 function updateNodePosition(node) {
-    log('Updating node position - nodeId: ' + node.id + ', x: ' + node.x + ', y: ' + node.y);
+    log('Updating node position/size - nodeId: ' + node.id + ', x: ' + node.x + ', y: ' + node.y);
     const nodeEl = document.getElementById(`node-${node.id}`);
     if (!nodeEl) {
         log('ERROR: Node element not found in DOM - nodeId: ' + node.id);
         return;
     }
     
-    const rect = nodeEl.querySelector('rect');
+    const nodeWidth = node.w || node.width || 120;
+    const nodeHeight = node.h || node.height || 60;
+    
+    // Get the main rect (not resize handles) - it's the first rect without resize-handle class
+    const allRects = nodeEl.querySelectorAll('rect');
+    const rect = nodeEl.querySelector('rect:not(.resize-handle)');
     const text = nodeEl.querySelector('text');
     
+    log('DEBUG - Found ' + allRects.length + ' rects in node, main rect found: ' + (rect ? 'YES' : 'NO'));
+    
     if (rect) {
+        log('DEBUG - Setting rect attributes: x=' + node.x + ', y=' + node.y + ', width=' + nodeWidth + ', height=' + nodeHeight);
         rect.setAttribute('x', node.x);
         rect.setAttribute('y', node.y);
-        log('Rect position updated - x: ' + node.x + ', y: ' + node.y);
+        rect.setAttribute('width', nodeWidth);
+        rect.setAttribute('height', nodeHeight);
+        log('Rect updated - pos: ' + node.x + ',' + node.y + ', size: ' + nodeWidth + 'x' + nodeHeight);
     } else {
-        log('ERROR: Rect element not found');
+        log('ERROR: Main rect element not found - trying first rect');
+        if (allRects.length > 0) {
+            const firstRect = allRects[0];
+            log('DEBUG - First rect class: ' + firstRect.className.baseVal + ', setting size anyway');
+            firstRect.setAttribute('x', node.x);
+            firstRect.setAttribute('y', node.y);  
+            firstRect.setAttribute('width', nodeWidth);
+            firstRect.setAttribute('height', nodeHeight);
+            log('First rect updated - pos: ' + node.x + ',' + node.y + ', size: ' + nodeWidth + 'x' + nodeHeight);
+        }
     }
     
     if (text) {
-        text.setAttribute('x', node.x + node.w / 2);
-        text.setAttribute('y', node.y + node.h / 2);
-        const textX = node.x + node.w / 2;
-        const textY = node.y + node.h / 2;
-        log('Text position updated - x: ' + textX + ', y: ' + textY);
+        const textX = node.x + nodeWidth / 2;
+        const textY = node.y + nodeHeight / 2 + 5; // +5 for vertical centering
+        text.setAttribute('x', textX);
+        text.setAttribute('y', textY);
+        log('Text position updated - x: ' + textX + ', y: ' + textY + ' (node size: ' + nodeWidth + 'x' + nodeHeight + ')');
     } else {
         log('ERROR: Text element not found');
     }
+    
+    // Update resize handles
+    const handles = nodeEl.querySelectorAll('.resize-handle');
+    handles.forEach(handle => {
+        const handleType = handle.getAttribute('data-handle');
+        switch(handleType) {
+            case 'nw':
+                handle.setAttribute('x', node.x - 4);
+                handle.setAttribute('y', node.y - 4);
+                break;
+            case 'se':
+                handle.setAttribute('x', node.x + nodeWidth - 4);
+                handle.setAttribute('y', node.y + nodeHeight - 4);
+                break;
+            case 'e':
+                handle.setAttribute('x', node.x + nodeWidth - 4);
+                handle.setAttribute('y', node.y + nodeHeight/2 - 4);
+                break;
+            case 's':
+                handle.setAttribute('x', node.x + nodeWidth/2 - 4);
+                handle.setAttribute('y', node.y + nodeHeight - 4);
+                break;
+        }
+    });
 }
 
 // Update all edges after node move
@@ -568,10 +813,15 @@ function updateEdges() {
         const polygon = edgeEl.querySelector('polygon');
         const text = edgeEl.querySelector('text');
         
-        const x1 = from.x + from.w / 2;
-        const y1 = from.y + from.h / 2;
-        const x2 = to.x + to.w / 2;
-        const y2 = to.y + to.h / 2;
+        const fromWidth = from.w || from.width || 120;
+        const fromHeight = from.h || from.height || 60;
+        const toWidth = to.w || to.width || 120;
+        const toHeight = to.h || to.height || 60;
+        
+        const x1 = from.x + fromWidth / 2;
+        const y1 = from.y + fromHeight / 2;
+        const x2 = to.x + toWidth / 2;
+        const y2 = to.y + toHeight / 2;
         
         if (line) {
             line.setAttribute('x1', x1);
@@ -639,9 +889,30 @@ function selectNode(nodeId) {
 
 function updateYamlEditor() {
     const yamlEditor = document.getElementById('yaml-editor');
+    
+    if (selectedEdge !== null) {
+        const edge = canvas.edges[selectedEdge];
+        if (!edge) {
+            yamlEditor.value = '';
+            yamlEditor.placeholder = 'Edge not found...';
+            return;
+        }
+        
+        // Generate YAML for the edge
+        let yaml = '- from: ' + edge.from + '\n';
+        yaml += '  to: ' + edge.to + '\n';
+        yaml += '  kind: ' + (edge.kind || 'implements') + '\n';
+        if (edge.label) {
+            yaml += '  label: ' + edge.label;
+        }
+        
+        yamlEditor.value = yaml;
+        return;
+    }
+    
     if (!selectedNode) {
         yamlEditor.value = '';
-        yamlEditor.placeholder = 'Select a node to edit YAML...';
+        yamlEditor.placeholder = 'Select a node or edge to edit YAML...';
         return;
     }
     
@@ -658,6 +929,67 @@ function updateYamlEditor() {
     yaml += '  h: ' + node.h;
     
     yamlEditor.value = yaml;
+}
+
+// Edge selection
+function selectEdge(edgeIndex) {
+    selectedEdge = edgeIndex;
+    selectedNode = null; // Clear node selection
+    
+    // Clear node selection in UI
+    document.querySelectorAll('.node-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    // Clear node properties
+    document.getElementById('selection-info').innerHTML = '';
+    
+    // Update YAML editor to show edge
+    updateYamlEditor();
+    
+    // Update visual selection in SVG
+    document.querySelectorAll('.edge').forEach((edge, index) => {
+        edge.classList.toggle('selected', index === edgeIndex);
+    });
+}
+
+function openEdgeEditModal(edgeIndex) {
+    const edge = canvas.edges[edgeIndex];
+    if (!edge) return;
+    
+    // Populate the edge edit modal with current values
+    const modal = document.getElementById('edge-edit-modal');
+    const fromSelect = document.getElementById('edge-edit-from');
+    const toSelect = document.getElementById('edge-edit-to');
+    const kindSelect = document.getElementById('edge-edit-kind');
+    const labelInput = document.getElementById('edge-edit-label');
+    
+    // Populate node options
+    fromSelect.innerHTML = '';
+    toSelect.innerHTML = '';
+    canvas.nodes.forEach(node => {
+        const optionFrom = document.createElement('option');
+        optionFrom.value = node.id;
+        optionFrom.textContent = node.label || node.id;
+        optionFrom.selected = node.id === edge.from;
+        fromSelect.appendChild(optionFrom);
+        
+        const optionTo = document.createElement('option');
+        optionTo.value = node.id;
+        optionTo.textContent = node.label || node.id;
+        optionTo.selected = node.id === edge.to;
+        toSelect.appendChild(optionTo);
+    });
+    
+    // Set current values
+    kindSelect.value = edge.kind || 'implements';
+    labelInput.value = edge.label || '';
+    
+    // Store the edge index for later use
+    modal.setAttribute('data-edge-index', edgeIndex);
+    
+    // Show the modal
+    modal.style.display = 'block';
 }
 
 function applyYaml() {
@@ -728,10 +1060,12 @@ function applyNodeEdit() {
 
 function clearSelection() {
     selectedNode = null;
+    selectedEdge = null;
     document.querySelectorAll('.node-item').forEach(item => item.classList.remove('selected'));
-    document.getElementById('selection-info').innerHTML = '<p style="font-size:11px;color:#888;">Click a node to edit</p>';
+    document.querySelectorAll('.edge').forEach(edge => edge.classList.remove('selected'));
+    document.getElementById('selection-info').innerHTML = '<p style="font-size:11px;color:#888;">Click a node or edge to edit</p>';
     document.getElementById('yaml-editor').value = '';
-    document.getElementById('yaml-editor').placeholder = 'Select a node to edit YAML...';
+    document.getElementById('yaml-editor').placeholder = 'Select a node or edge to edit YAML...';
 }
 
 // Node list rendering
@@ -814,6 +1148,47 @@ function confirmEdge() {
     }
     
     canvas.edges.push(edge);
+    location.reload();
+    closeModal();
+}
+
+function confirmEdgeEdit() {
+    const modal = document.getElementById('edge-edit-modal');
+    const edgeIndex = parseInt(modal.getAttribute('data-edge-index'));
+    const edge = canvas.edges[edgeIndex];
+    
+    if (!edge) {
+        alert('Edge not found');
+        return;
+    }
+    
+    // Get updated values
+    edge.from = document.getElementById('edge-edit-from').value;
+    edge.to = document.getElementById('edge-edit-to').value;
+    edge.kind = document.getElementById('edge-edit-kind').value;
+    edge.label = document.getElementById('edge-edit-label').value || undefined;
+    
+    if (!edge.from || !edge.to || edge.from === edge.to) {
+        alert('Select two different nodes');
+        return;
+    }
+    
+    // Save and reload
+    location.reload();
+    closeModal();
+}
+
+function deleteEdge() {
+    const modal = document.getElementById('edge-edit-modal');
+    const edgeIndex = parseInt(modal.getAttribute('data-edge-index'));
+    
+    if (!confirm('Delete this edge?')) return;
+    
+    // Remove edge from canvas
+    canvas.edges.splice(edgeIndex, 1);
+    selectedEdge = null;
+    
+    // Save and reload
     location.reload();
     closeModal();
 }

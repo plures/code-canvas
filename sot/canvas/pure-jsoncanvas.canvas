@@ -1,0 +1,62 @@
+{
+  "nodes": [
+    {
+      "id": "text-node-1", 
+      "type": "text",
+      "x": 100,
+      "y": 100,
+      "width": 250,
+      "height": 100,
+      "color": "#ff6b6b",
+      "text": "# JSON Canvas Demo\n\nThis is a **pure JSON Canvas** file demonstrating:\n- Text nodes with markdown\n- Color theming\n- Standard positioning"
+    },
+    {
+      "id": "file-node-1",
+      "type": "file", 
+      "x": 400,
+      "y": 100,
+      "width": 180,
+      "height": 80,
+      "color": "#4ecdc4",
+      "file": "tools/canvas-renderer.ts"
+    },
+    {
+      "id": "link-node-1",
+      "type": "link",
+      "x": 100,
+      "y": 250,
+      "width": 200,
+      "height": 60,
+      "color": "#45b7d1", 
+      "url": "https://jsoncanvas.org"
+    },
+    {
+      "id": "group-1",
+      "type": "group",
+      "x": 50,
+      "y": 50,
+      "width": 580,
+      "height": 280,
+      "color": "#f39c12",
+      "label": "JSON Canvas Features"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "fromNode": "text-node-1",
+      "toNode": "file-node-1", 
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#e74c3c"
+    },
+    {
+      "id": "edge-2", 
+      "fromNode": "text-node-1",
+      "toNode": "link-node-1",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "color": "#9b59b6"
+    }
+  ]
+}

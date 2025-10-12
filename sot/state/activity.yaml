@@ -1,4 +1,4 @@
-activity: implementation
+activity: design
 actor: human
-note: "Implementing canvas rendering engine"
-since: "2025-10-07T21:20:17.776103Z"
+note: "Documenting JSON Canvas compatibility and drag-and-drop fixes"
+since: "2025-10-11T15:30:00.000Z"

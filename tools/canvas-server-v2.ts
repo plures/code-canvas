@@ -15,19 +15,27 @@ const GRID_SIZE = 20;
 
 interface CanvasNode {
   id: string;
-  type: "box" | "fsm" | "control" | "doc" | "database";
+  type: "box" | "fsm" | "control" | "doc" | "database" | "text" | "file" | "link" | "group";
   label?: string;
   x: number;
   y: number;
-  w: number;
-  h: number;
+  w?: number;
+  h?: number;
+  width?: number;
+  height?: number;
+  color?: string;
+  text?: string;
+  file?: string;
+  url?: string;
   props?: Record<string, unknown>;
   ref?: string;
 }
 
 interface CanvasEdge {
-  from: string;
-  to: string;
+  from?: string;
+  to?: string;
+  fromNode?: string;
+  toNode?: string;
   label?: string;
   kind?: "triggers" | "guards" | "tests" | "implements" | "docs";
 }
@@ -48,7 +56,11 @@ const NODE_STYLES = {
   fsm: { fill: "#f3e5f5", stroke: "#4a148c", strokeWidth: 3 },
   control: { fill: "#e8f5e8", stroke: "#1b5e20", strokeWidth: 2 },
   doc: { fill: "#fff3e0", stroke: "#e65100", strokeWidth: 2 },
-  database: { fill: "#fce4ec", stroke: "#880e4f", strokeWidth: 2 }
+  database: { fill: "#fce4ec", stroke: "#880e4f", strokeWidth: 2 },
+  text: { fill: "#fff3e0", stroke: "#e65100", strokeWidth: 2 },
+  file: { fill: "#e8f5e8", stroke: "#1b5e20", strokeWidth: 2 },
+  link: { fill: "#e1f5fe", stroke: "#01579b", strokeWidth: 2 },
+  group: { fill: "#f5f5f5", stroke: "#757575", strokeWidth: 1 }
 };
 
 const EDGE_STYLES = {
@@ -62,45 +74,108 @@ const EDGE_STYLES = {
 function renderCanvasToSvg(canvas: Canvas): string {
   let maxX = 800, maxY = 600;
   if (canvas.nodes.length > 0) {
-    maxX = Math.max(...canvas.nodes.map(n => n.x + n.w)) + 40;
-    maxY = Math.max(...canvas.nodes.map(n => n.y + n.h)) + 40;
+    maxX = Math.max(...canvas.nodes.map(n => n.x + (n.w || n.width || 120))) + 40;
+    maxY = Math.max(...canvas.nodes.map(n => n.y + (n.h || n.height || 60))) + 40;
   }
 
   const renderNode = (node: CanvasNode) => {
     const style = NODE_STYLES[node.type] || NODE_STYLES.box;
-    const label = node.label || node.id;
-    return `<g class="node node-${node.type}" id="node-${node.id}" data-x="${node.x}" data-y="${node.y}" data-w="${node.w}" data-h="${node.h}">
-      <rect x="${node.x}" y="${node.y}" width="${node.w}" height="${node.h}"
-            fill="${style.fill}" stroke="${style.stroke}" stroke-width="${style.strokeWidth}" rx="5"/>
-      <text x="${node.x + node.w/2}" y="${node.y + node.h/2}" 
+    const label = node.label || node.text || node.id;
+    const width = node.w || node.width || 120;
+    const height = node.h || node.height || 60;
+    const fill = node.color || style.fill;
+    
+    return `<g class="node node-${node.type}" id="node-${node.id}" data-x="${node.x}" data-y="${node.y}" data-w="${width}" data-h="${height}">
+      <rect x="${node.x}" y="${node.y}" width="${width}" height="${height}"
+            fill="${fill}" stroke="${style.stroke}" stroke-width="${style.strokeWidth}" rx="5"/>
+      <text x="${node.x + width/2}" y="${node.y + height/2}" 
             text-anchor="middle" dominant-baseline="middle"
-            font-family="Arial" font-size="14" font-weight="600">${label}</text>
+            font-family="Arial" font-size="14" font-weight="600" data-node-id="${node.id}">${label}</text>
+      <!-- Resize handles -->
+      <rect class="resize-handle corner nw" data-node-id="${node.id}" data-handle="nw"
+            x="${node.x - 4}" y="${node.y - 4}" width="8" height="8" rx="1"/>
+      <rect class="resize-handle corner se" data-node-id="${node.id}" data-handle="se"
+            x="${node.x + width - 4}" y="${node.y + height - 4}" width="8" height="8" rx="1"/>
+      <rect class="resize-handle edge-right" data-node-id="${node.id}" data-handle="e"
+            x="${node.x + width - 4}" y="${node.y + height/2 - 4}" width="8" height="8" rx="1"/>
+      <rect class="resize-handle edge-bottom" data-node-id="${node.id}" data-handle="s"
+            x="${node.x + width/2 - 4}" y="${node.y + height - 4}" width="8" height="8" rx="1"/>
     </g>`;
   };
 
-  const renderEdge = (edge: CanvasEdge) => {
-    const from = canvas.nodes.find(n => n.id === edge.from);
-    const to = canvas.nodes.find(n => n.id === edge.to);
+  const renderEdge = (edge: CanvasEdge, index: number) => {
+    const fromId = edge.from || edge.fromNode;
+    const toId = edge.to || edge.toNode;
+    const from = canvas.nodes.find(n => n.id === fromId);
+    const to = canvas.nodes.find(n => n.id === toId);
     if (!from || !to) return '';
 
-    const x1 = from.x + from.w / 2, y1 = from.y + from.h / 2;
-    const x2 = to.x + to.w / 2, y2 = to.y + to.h / 2;
+    const fromWidth = from.w || from.width || 120;
+    const fromHeight = from.h || from.height || 60;
+    const toWidth = to.w || to.width || 120;
+    const toHeight = to.h || to.height || 60;
+    
+    // Calculate center points first
+    const fromCenterX = from.x + fromWidth / 2;
+    const fromCenterY = from.y + fromHeight / 2;
+    const toCenterX = to.x + toWidth / 2;
+    const toCenterY = to.y + toHeight / 2;
+    
+    // Calculate connection points on node borders
+    const dx = toCenterX - fromCenterX;
+    const dy = toCenterY - fromCenterY;
+    const angle = Math.atan2(dy, dx);
+    
+    // From node border connection point
+    let x1, y1;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Horizontal connection (left/right sides)
+      x1 = dx > 0 ? from.x + fromWidth : from.x;
+      y1 = fromCenterY + (dy / Math.abs(dx)) * (fromWidth / 2);
+    } else {
+      // Vertical connection (top/bottom sides)
+      x1 = fromCenterX + (dx / Math.abs(dy)) * (fromHeight / 2);
+      y1 = dy > 0 ? from.y + fromHeight : from.y;
+    }
+    
+    // To node border connection point
+    let x2, y2;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Horizontal connection (left/right sides)
+      x2 = dx > 0 ? to.x : to.x + toWidth;
+      y2 = toCenterY - (dy / Math.abs(dx)) * (toWidth / 2);
+    } else {
+      // Vertical connection (top/bottom sides)
+      x2 = toCenterX - (dx / Math.abs(dy)) * (toHeight / 2);
+      y2 = dy > 0 ? to.y : to.y + toHeight;
+    }
+    
     const style = EDGE_STYLES[edge.kind || 'implements'];
     const dashAttr = style.dash !== 'none' ? `stroke-dasharray="${style.dash}"` : '';
     
-    const angle = Math.atan2(y2 - y1, x2 - x1);
+    // Calculate arrow head
+    const arrowAngle = Math.atan2(y2 - y1, x2 - x1);
     const size = 10;
-    const ax1 = x2 - size * Math.cos(angle - Math.PI / 6);
-    const ay1 = y2 - size * Math.sin(angle - Math.PI / 6);
-    const ax2 = x2 - size * Math.cos(angle + Math.PI / 6);
-    const ay2 = y2 - size * Math.sin(angle + Math.PI / 6);
+    const ax1 = x2 - size * Math.cos(arrowAngle - Math.PI / 6);
+    const ay1 = y2 - size * Math.sin(arrowAngle - Math.PI / 6);
+    const ax2 = x2 - size * Math.cos(arrowAngle + Math.PI / 6);
+    const ay2 = y2 - size * Math.sin(arrowAngle + Math.PI / 6);
 
-    return `<g class="edge edge-${edge.kind || 'default'}" id="edge-${edge.from}-${edge.to}">
-      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" 
-            stroke="${style.stroke}" stroke-width="2" ${dashAttr}/>
-      <polygon points="${x2},${y2} ${ax1},${ay1} ${ax2},${ay2}" fill="${style.stroke}"/>
+    return `<g class="edge edge-${edge.kind || 'default'}" id="edge-${fromId}-${toId}" 
+               data-from="${fromId}" data-to="${toId}" data-kind="${edge.kind || 'implements'}" data-edge-index="${index}">
+      <!-- Invisible clickable line with larger hit area -->
+      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(0,0,0,0)" stroke-width="12"/>
+      <!-- Visual line -->
+      <line class="edge-visual" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" 
+            stroke="${style.stroke}" stroke-width="2" opacity="1" ${dashAttr}/>
+      <polygon class="edge-visual" points="${x2},${y2} ${ax1},${ay1} ${ax2},${ay2}" fill="${style.stroke}" opacity="1"/>
+      <!-- Connection point handles (for future movability) -->
+      <circle class="connection-point from-point" cx="${x1}" cy="${y1}" r="4" fill="rgba(0,100,200,0)" 
+              data-edge-index="${index}" data-point="from" stroke="none"/>
+      <circle class="connection-point to-point" cx="${x2}" cy="${y2}" r="4" fill="rgba(0,100,200,0)" 
+              data-edge-index="${index}" data-point="to" stroke="none"/>
       ${edge.label ? `<text x="${(x1+x2)/2}" y="${(y1+y2)/2-5}" text-anchor="middle" 
-                            font-size="10" fill="#666">${edge.label}</text>` : ''}
+                            font-size="10" fill="#666" data-edge-label="true">${edge.label}</text>` : ''}
     </g>`;
   };
 
@@ -115,13 +190,21 @@ function renderCanvasToSvg(canvas: Canvas): string {
       .node { cursor: move; }
       .node:hover rect { stroke-width: 4; }
       .node.dragging { opacity: 0.7; }
-      .edge { pointer-events: none; }
-      text { user-select: none; pointer-events: none; }
+      .edge { cursor: pointer; }
+      .edge line { opacity: 1 !important; }
+      .edge polygon { opacity: 1 !important; }
+      .edge-visual { opacity: 1 !important; }
+      .edge:hover .edge-visual { opacity: 0.8; }
+      .edge.selected .edge-visual { stroke-width: 3; stroke: #0066cc; opacity: 1; }
+      .edge.selected .connection-point { fill: rgba(0,100,200,0.7); stroke: #0066cc; stroke-width: 1; cursor: move; }
+      .connection-point { pointer-events: none; }
+      .edge text { pointer-events: none; }
+      .node text { user-select: none; pointer-events: none; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="url(#grid)"/>
-  ${canvas.edges.map(renderEdge).join('')}
   ${canvas.nodes.map(renderNode).join('')}
+  ${canvas.edges.map((edge, index) => renderEdge(edge, index)).join('')}
 </svg>`;
 }
 

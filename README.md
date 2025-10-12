@@ -13,7 +13,7 @@ Purpose: enforce lifecycle, tests-first, and conversation control for AI-assiste
 2. Run `deno task prepare-hooks`.
 3. Configure your current activity in `sot/state/activity.yaml`.
 4. Commit changes. The hook will validate diffs against the FSM and chores.
-5. Use `sot/canvas/*.yaml` to design UI and business flows. Renderers can target Storybook or custom viewers later.
+5. Use `sot/canvas/*.yaml` to design UI and business flows. Supports both YAML Canvas and JSON Canvas formats for interoperability with Obsidian Canvas.
 
 ## Structure
 ```
@@ -40,8 +40,11 @@ deno.json
 ```
 
 ## Commands
+
 - `deno task validate` — validate staged changes
 - `deno task prepare-hooks` — install `.githooks/pre-commit` to `.git/hooks/pre-commit`
+- `deno run -A tools/canvas-server-v2.ts --file canvas.canvas --port 8080` — interactive canvas editor
+- `deno run -A tools/enhanced-cli.ts render canvas.yaml` — render canvas to SVG/HTML
 
 ## Notes
 - Extend schemas in `sot/schemas/*`. Keep documents small. Split when >2–3k tokens.
