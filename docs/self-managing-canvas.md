@@ -197,3 +197,18 @@ The self-managing canvas integrates with the existing Code Canvas FSM system:
 ```
 
 The self-managing canvas represents a new paradigm in software development where the design tool becomes part of the system it manages, creating a truly integrated development experience.
+
+## Troubleshooting
+
+### Interactive Features Not Working
+
+- Refresh the browser page to re-initialize event handlers
+- Check browser console for JavaScript errors
+- Verify the server is running with proper background job management
+- Use PowerShell `Start-Job` for reliable background server processes
+
+### Server Startup Issues
+
+- Use background jobs: `Start-Job -ScriptBlock { deno run -A tools/self-managing-canvas-server.ts --port 8083 }`
+- Check if port is already in use: `netstat -ano | findstr :8083`
+- Verify file paths are correct and don't have duplicate directory prefixes

@@ -162,6 +162,16 @@ function renderCanvasToSvg(canvas: Canvas): string {
       .node text { user-select: none; pointer-events: none; }
       .drill-down-icon { cursor: pointer; }
       .drill-down-icon:hover { fill: #1976d2; }
+      
+      /* Enhanced interactivity styling */
+      .node { cursor: grab; }
+      .node:hover { filter: drop-shadow(0 0 8px rgba(0, 122, 204, 0.5)); }
+      .node.dragging { cursor: grabbing; filter: drop-shadow(0 0 12px rgba(0, 122, 204, 0.8)); }
+      .node.selected { filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.8)); }
+      
+      .edge { cursor: pointer; transition: opacity 0.2s; }
+      .edge:hover { opacity: 0.8 !important; }
+      .edge.selected { stroke: #ffc107 !important; stroke-width: 3 !important; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="url(#grid)"/>
@@ -489,8 +499,12 @@ async function loadCanvas(canvasFile = currentCanvas) {
         const svgContent = await svgResponse.text();
         document.getElementById('canvas-svg').innerHTML = svgContent;
         
-        // Re-initialize interactions
-        initDragDrop();
+        console.log('Canvas HTML updated, re-initializing interactions...');
+        // Re-initialize interactions after DOM update
+        setTimeout(() => {
+            initDragDrop();
+            console.log('Interactions re-initialized after canvas reload');
+        }, 100);
         updateBreadcrumb();
         showStatus('Loaded canvas: ' + currentCanvas);
     } catch (error) {
@@ -500,11 +514,17 @@ async function loadCanvas(canvasFile = currentCanvas) {
 
 // Enhanced drag and drop with drill-down handling
 function initDragDrop() {
+    console.log('Initializing drag and drop...');
     const svg = document.querySelector('svg');
-    if (!svg) return;
+    if (!svg) {
+        console.error('SVG not found!');
+        return;
+    }
+    console.log('SVG found:', svg);
     
     // Click handling for nodes and edges
     svg.addEventListener('click', (e) => {
+        console.log('SVG clicked!', e.target);
         e.preventDefault();
         
         // Check if clicked on drill-down icon
@@ -622,18 +642,28 @@ function initDragDrop() {
         }
     });
     
-    // Edge hover effects
+    // Edge hover effects - add to all edges
     const edges = svg.querySelectorAll('.edge');
+    console.log('Adding hover effects to', edges.length, 'edges');
     edges.forEach(edge => {
         edge.addEventListener('mouseenter', () => {
+            console.log('Edge mouseenter');
             edge.style.opacity = '0.8';
         });
         
         edge.addEventListener('mouseleave', () => {
+            console.log('Edge mouseleave');
             if (!edge.classList.contains('selected')) {
                 edge.style.opacity = '1';
             }
         });
+    });
+    
+    // Add mouseover/mouseout to entire SVG for general debugging
+    svg.addEventListener('mouseover', (e) => {
+        if (e.target.tagName === 'path' || e.target.closest('.edge')) {
+            console.log('Mouse over edge element');
+        }
     });
 }
 
@@ -900,9 +930,23 @@ function showStatus(message, type = 'info') {
 // [Additional canvas management functions would go here...]
 
 // Initialize
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
+    console.log('Initializing canvas...');
+    
+    // Load initial canvas data
+    try {
+        const response = await fetch('/api/canvas');
+        canvas = await response.json();
+        console.log('Canvas loaded:', canvas);
+    } catch (error) {
+        console.error('Error loading canvas:', error);
+    }
+    
+    // Initialize interactions
     initDragDrop();
     updateBreadcrumb();
+    
+    console.log('Canvas initialization complete');
 });
     </script>
 </body>
@@ -925,7 +969,8 @@ async function startServer(options: ServerOptions): Promise<void> {
     
     if (path === '/') {
       const targetFile = file || 'code-canvas-architecture.canvas.yaml';
-      const canvasPath = join(CANVAS_DIR, targetFile);
+      // If file already includes the directory path, use it directly
+      const canvasPath = targetFile.includes('/') ? targetFile : join(CANVAS_DIR, targetFile);
       
       try {
         if (await exists(canvasPath)) {
@@ -944,7 +989,8 @@ async function startServer(options: ServerOptions): Promise<void> {
     
     if (path === '/api/canvas') {
       const canvasFile = url.searchParams.get('file') || file || 'code-canvas-architecture.canvas.yaml';
-      const canvasPath = join(CANVAS_DIR, canvasFile);
+      // If file already includes the directory path, use it directly
+      const canvasPath = canvasFile.includes('/') ? canvasFile : join(CANVAS_DIR, canvasFile);
       
       try {
         const content = await Deno.readTextFile(canvasPath);
@@ -959,7 +1005,8 @@ async function startServer(options: ServerOptions): Promise<void> {
     
     if (path === '/api/render') {
       const canvasFile = url.searchParams.get('file') || file || 'code-canvas-architecture.canvas.yaml';
-      const canvasPath = join(CANVAS_DIR, canvasFile);
+      // If file already includes the directory path, use it directly
+      const canvasPath = canvasFile.includes('/') ? canvasFile : join(CANVAS_DIR, canvasFile);
       
       try {
         const content = await Deno.readTextFile(canvasPath);
@@ -1009,7 +1056,8 @@ async function startServer(options: ServerOptions): Promise<void> {
       const canvasData = body.canvas;
       
       try {
-        const canvasPath = join(CANVAS_DIR, canvasFile);
+        // If file already includes the directory path, use it directly
+        const canvasPath = canvasFile.includes('/') ? canvasFile : join(CANVAS_DIR, canvasFile);
         const yamlContent = yaml.stringify(canvasData);
         await Deno.writeTextFile(canvasPath, yamlContent);
         return new Response('OK');
@@ -1021,7 +1069,13 @@ async function startServer(options: ServerOptions): Promise<void> {
     return new Response('Not Found', { status: 404 });
   };
   
-  Deno.serve({ port }, handler);
+  const server = Deno.serve({ port }, handler);
+  console.log(`🎨 Self-Managing Canvas Server on http://localhost:${port}`);
+  console.log(`📁 Canvas directory: ${CANVAS_DIR}`);
+  console.log(`📄 Default canvas: ${options.file || 'code-canvas-architecture.canvas.yaml'}`);
+  
+  // Keep server running
+  await server.finished;
 }
 
 if (import.meta.main) {
