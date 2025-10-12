@@ -1,11 +1,15 @@
 {
   "tasks": {
-    "canvas": "deno run -A tools/cli.ts canvas",
+    "canvas": "deno run -A tools/cli-enhanced.ts canvas",
+    "canvas-legacy": "deno run -A tools/cli.ts canvas",
     "canvas-server": "deno run -A tools/canvas-server.ts",
     "validate": "deno run -A tools/guardian.ts",
     "prepare-hooks": "deno run -A tools/tasks.ts install-hooks",
     "render-canvas": "deno run -A tools/canvas-renderer.ts",
+    "render-enhanced": "deno run -A tools/canvas-render.ts",
     "render-all": "deno run -A tools/canvas-renderer.ts --all",
+    "render-all-enhanced": "deno run -A tools/canvas-render.ts --all",
+    "jsoncanvas-demo": "deno run -A tools/jsoncanvas-demo.ts",
     "fsm": "deno run -A tools/fsm-manager.ts",
     "validate-config": "deno run -A tools/schema-validator.ts",
     "test": "deno test --allow-all --no-check tests/"

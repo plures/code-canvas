@@ -24,41 +24,68 @@ interface Command {
 // Canvas commands
 async function canvasRender(args: string[]): Promise<number> {
   const parsed = parseArgs(args, {
-    boolean: ["all", "help"],
-    string: ["file", "output"],
-    alias: { h: "help", o: "output", f: "file" },
+    boolean: ["all", "help", "enhanced", "jsoncanvas"],
+    string: ["file", "output", "format"],
+    alias: { h: "help", o: "output", f: "file", e: "enhanced", j: "jsoncanvas" },
+    default: { format: "svg" },
   });
 
   if (parsed.help) {
     console.log(`
 Usage: canvas render [OPTIONS]
 
-Render canvas files to SVG/HTML output.
+Render canvas files to SVG/HTML output with JSON Canvas support.
 
 Options:
-  --all              Render all canvas files
-  --file, -f <path>  Render specific canvas file
-  --output, -o <dir> Output directory (default: output/)
-  --help, -h         Show this help
+  --all               Render all canvas files
+  --file, -f <path>   Render specific canvas file
+  --output, -o <dir>  Output directory (default: output/)
+  --format <fmt>      Output format (svg, html, json)
+  --enhanced, -e      Use enhanced renderer with JSON Canvas support
+  --jsoncanvas, -j    Convert to JSON Canvas format
+  --help, -h          Show this help
 
 Examples:
   canvas render --all
-  canvas render --file sot/canvas/demo.canvas.yaml
-  canvas render -f demo.canvas.yaml -o dist/
+  canvas render --file sot/canvas/demo.canvas.yaml --enhanced
+  canvas render -f demo.canvas.yaml -o dist/ --format html
+  canvas render --file demo.yaml --jsoncanvas --format json
 `);
     return 0;
   }
 
-  const cmd = ["deno", "run", "-A", "tools/canvas-renderer.ts"];
-  if (parsed.all) cmd.push("--all");
-  if (parsed.file) cmd.push("--file", parsed.file);
-  if (parsed.output) cmd.push("--output", parsed.output);
+  // Use enhanced renderer if requested or if format requires it
+  const useEnhanced = parsed.enhanced || parsed.jsoncanvas || parsed.format === "html";
+  
+  if (useEnhanced) {
+    // Use enhanced renderer with JSON Canvas support
+    const cmd = ["deno", "run", "-A", "tools/canvas-render.ts"];
+    if (parsed.all) cmd.push("--all");
+    if (parsed.file) cmd.push("--file", parsed.file);
+    if (parsed.output) cmd.push("--output", parsed.output);
+    if (parsed.format) cmd.push("--format", parsed.format);
+    
+    const process = new Deno.Command(cmd[0], {
+      args: cmd.slice(1),
+      stdin: "inherit",
+      stdout: "inherit", 
+      stderr: "inherit",
+    });
+    const { code } = await process.output();
+    return code;
+  } else {
+    // Use original renderer
+    const cmd = ["deno", "run", "-A", "tools/canvas-renderer.ts"];
+    if (parsed.all) cmd.push("--all");
+    if (parsed.file) cmd.push("--file", parsed.file);
+    if (parsed.output) cmd.push("--output", parsed.output);
 
-  const process = new Deno.Command(cmd[0], {
-    args: cmd.slice(1),
-  });
-  const { code } = await process.output();
-  return code;
+    const process = new Deno.Command(cmd[0], {
+      args: cmd.slice(1),
+    });
+    const { code } = await process.output();
+    return code;
+  }
 }
 
 async function canvasList(): Promise<number> {

@@ -16,15 +16,25 @@
 - Unit test suite with cross-platform compatibility (`tests/guardian.test.ts`)
 - Enhanced CLI: `fsm`, `validate-config`, `render-canvas`, `test`
 
-## 🚀 **Phase 2: Canvas & Visualization**
+## ✅ **Phase 2: Canvas & Visualization (Complete)**
 
 - [x] **Interactive Canvas Viewer** - Web-based server with live preview, zoom, search
-- [ ] **Canvas Editor** - In-browser YAML editor with real-time validation  
-- [ ] **Drag-and-Drop** - Visual node positioning and layout tools
+- [x] **Canvas Editor** - In-browser YAML editor with real-time validation  
+- [x] **Drag-and-Drop** - Visual node positioning and layout tools
+
+### Phase 2 Deliverables
+
+- Interactive Canvas Editor V2 with full drag-and-drop editing (`tools/canvas-editor.html`)
+- Enhanced canvas server with REST API for persistence (`tools/canvas-server-v2.ts`)
+- Side panel YAML editor for advanced node configuration
+- Grid-based positioning with 20px snap, modal-based creation/editing
+- Real-time canvas updates with server-side logging
 
 ## 🔧 **Phase 3: Developer Experience**
 
 - [x] **CLI Enhancement** - Unified `canvas` command with intuitive subcommands
+- [x] **JSON Canvas Compatibility** - Full JSON Canvas 1.0 standard support with bi-directional conversion
+- [x] **Enhanced Rendering** - Support for text/file/link/group nodes, colors, edge positioning  
 - [x] **CI/CD Integration** - GitHub Actions, GitLab CI, Azure Pipelines templates  
 - [x] **Project Templates** - Quick start templates for new projects
 - [ ] **VS Code Extension** - Syntax highlighting, canvas preview, FSM visualization
@@ -35,9 +45,17 @@
 - [ ] **Agent Logging System** - JSONL logging, run tracing, behavior analytics
 - [ ] **Smart Assistance** - Auto-suggest chores, transition recommendations
 
+### Phase 3 Deliverables
+
+- Enhanced CLI v0.3.0 with JSON Canvas support (`tools/cli-enhanced.ts`)
+- JSON Canvas compatibility layer with bi-directional conversion (`tools/jsoncanvas-compat.ts`)
+- Advanced canvas renderer supporting all JSON Canvas 1.0 features (`tools/enhanced-canvas-renderer.ts`)
+- Extended schema supporting both Code Canvas and JSON Canvas formats (`sot/schemas/jsoncanvas.schema.yaml`)
+- Demo files showcasing complete JSON Canvas standard compliance (`sot/canvas/jsoncanvas-demo.canvas.yaml`)
+
 ## 🎯 **Current Status**
 
-✅ **Phase 1 Complete** - Full FSM lifecycle management with validation systems
-✅ **Phase 3 Partial** - CLI enhancement & CI/CD templates ready
-✅ **Phase 2 Partial** - Interactive canvas server with live preview
-🎯 **Next Phase** - Complete Phase 2 (YAML editor) or Phase 3 (VS Code extension)
+✅ **Phase 1 Complete** - Full FSM lifecycle management with validation systems  
+✅ **Phase 2 Complete** - Interactive canvas editor with drag-and-drop and YAML editing  
+✅ **Phase 3 Major Progress** - CLI enhancement & JSON Canvas compatibility complete, VS Code extension pending  
+🎯 **Next Priority** - Complete Phase 3 (VS Code extension) or begin Phase 4 (AI agent logging)

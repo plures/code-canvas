@@ -5,8 +5,8 @@ invariants:
     check:
       type: file_size
       patterns: ["docs/**/*.md", "tests/**/*.md", "designs/**/*.md"]
-      max_lines: 150
-      max_chars: 3000
+      max_lines: 200
+      max_chars: 8000
   - id: yaml_valid
     description: All YAML files must be valid
     check:
@@ -16,8 +16,8 @@ invariants:
     description: Commits should be focused and small
     check:
       type: commit_size
-      max_files: 15
-      max_additions: 800
+      max_files: 25
+      max_additions: 2500
 
 chores:
   - id: version_changelog

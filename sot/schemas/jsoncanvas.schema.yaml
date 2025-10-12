@@ -1,0 +1,90 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: JSONCanvas Compatible Schema
+description: Extended schema supporting both JSON Canvas standard and Code Canvas semantic features
+type: object
+required: [nodes]
+properties:
+  nodes:
+    type: array
+    items:
+      type: object
+      required: [id, type, x, y, width, height]
+      properties:
+        # Standard JSON Canvas properties
+        id: { type: string }
+        type: 
+          type: string
+          enum: [
+            # JSON Canvas standard types
+            "text", "file", "link", "group",
+            # Code Canvas semantic types (extended)
+            "box", "fsm", "control", "doc", "database"
+          ]
+        x: { type: number }
+        y: { type: number }
+        width: { type: number }
+        height: { type: number }
+        color:
+          oneOf:
+            - type: string
+              pattern: "^#[0-9A-Fa-f]{6}$"  # Hex colors
+            - type: string
+              enum: ["1", "2", "3", "4", "5", "6"]  # Preset colors
+        
+        # Node type specific properties
+        text: { type: string, description: "Markdown text content for text nodes" }
+        file: { type: string, description: "File path for file nodes" }
+        subpath: { type: string, description: "Subpath within file (starts with #)" }
+        url: { type: string, format: uri, description: "URL for link nodes" }
+        label: { type: string, description: "Label for group nodes or display name" }
+        background: { type: string, description: "Background image path for groups" }
+        backgroundStyle:
+          type: string
+          enum: ["cover", "ratio", "repeat"]
+          description: "Background image style for groups"
+        
+        # Code Canvas extensions
+        w: { type: number, description: "Width (backward compatibility)" }
+        h: { type: number, description: "Height (backward compatibility)" }
+        props: { type: object, additionalProperties: true, description: "Custom properties" }
+        ref: { type: string, description: "Reference to defining document" }
+        
+  edges:
+    type: array
+    items:
+      type: object
+      required: [id, fromNode, toNode]
+      properties:
+        # Standard JSON Canvas properties
+        id: { type: string }
+        fromNode: { type: string }
+        toNode: { type: string }
+        fromSide:
+          type: string
+          enum: ["top", "right", "bottom", "left"]
+        toSide:
+          type: string
+          enum: ["top", "right", "bottom", "left"]
+        fromEnd:
+          type: string
+          enum: ["none", "arrow"]
+          default: "none"
+        toEnd:
+          type: string
+          enum: ["none", "arrow"]
+          default: "arrow"
+        color:
+          oneOf:
+            - type: string
+              pattern: "^#[0-9A-Fa-f]{6}$"
+            - type: string
+              enum: ["1", "2", "3", "4", "5", "6"]
+        label: { type: string }
+        
+        # Code Canvas extensions (backward compatibility)
+        from: { type: string, description: "Source node (backward compatibility)" }
+        to: { type: string, description: "Target node (backward compatibility)" }
+        kind: 
+          type: string
+          enum: ["triggers", "guards", "tests", "implements", "docs"]
+          description: "Semantic edge type"

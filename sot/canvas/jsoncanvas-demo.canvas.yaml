@@ -1,0 +1,123 @@
+nodes:
+  # JSON Canvas standard types with Code Canvas extensions
+  
+  # Text node with Markdown content
+  - id: overview-text
+    type: text
+    x: 50
+    y: 50
+    width: 300
+    height: 120
+    text: |
+      # Code Canvas Demo
+      
+      This demonstrates **JSON Canvas** compatibility with our semantic extensions.
+      
+      - Interactive editing
+      - FSM awareness  
+      - Semantic relationships
+    color: "6"  # Purple preset
+  
+  # File node referencing documentation
+  - id: spec-doc
+    type: file
+    x: 400
+    y: 50
+    width: 200
+    height: 80
+    file: "docs/specification.md"
+    label: "Canvas Specification"
+    color: "#4169e1"  # Custom hex color
+    
+  # Link node to external resource
+  - id: jsoncanvas-link
+    type: link
+    x: 650
+    y: 50
+    width: 180
+    height: 60
+    url: "https://jsoncanvas.org"
+    label: "JSON Canvas Standard"
+    color: "4"  # Green preset
+    
+  # Group container for FSM components
+  - id: fsm-group
+    type: group
+    x: 30
+    y: 200
+    width: 350
+    height: 200
+    label: "State Management"
+    color: "1"  # Red preset
+    
+  # Code Canvas semantic types inside group
+  - id: app-fsm
+    type: fsm
+    label: "Application FSM"
+    x: 50
+    y: 230
+    width: 150
+    height: 80
+    ref: "sot/lifecycle.yaml"
+    color: "6"
+    
+  - id: state-db
+    type: database
+    label: "State Store"
+    x: 220
+    y: 230
+    width: 140
+    height: 80
+    props:
+      engine: "redis"
+      persistent: true
+    
+  # Control outside group
+  - id: action-btn
+    type: control
+    label: "Action Button"
+    x: 450
+    y: 250
+    width: 160
+    height: 60
+    ref: "src/components/ActionButton.tsx"
+    color: "4"
+
+edges:
+  # JSON Canvas standard edge properties
+  - id: "overview-to-spec"
+    fromNode: overview-text
+    toNode: spec-doc
+    label: "defined in"
+    color: "2"  # Orange
+    fromSide: right
+    toSide: left
+    toEnd: arrow
+    
+  - id: "spec-to-jsoncanvas"
+    fromNode: spec-doc
+    toNode: jsoncanvas-link
+    label: "based on"
+    color: "#32cd32"  # Custom green
+    fromSide: right
+    toSide: left
+    
+  # Code Canvas semantic edges with JSON Canvas properties
+  - id: "fsm-to-db"
+    fromNode: app-fsm
+    toNode: state-db
+    kind: implements
+    label: "persists to"
+    color: "1"
+    fromSide: right
+    toSide: left
+    toEnd: arrow
+    
+  - id: "fsm-guards-btn" 
+    fromNode: app-fsm
+    toNode: action-btn
+    kind: guards
+    label: "enables/disables"
+    fromSide: bottom
+    toSide: top
+    toEnd: arrow

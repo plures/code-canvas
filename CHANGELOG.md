@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Raw YAML editor for advanced node configuration
   - Zoom controls (In/Out/Fit) and export to YAML
   - Server-side logging for debugging drag operations
+
+- **JSON Canvas 1.0 Standard Compatibility** (`tools/jsoncanvas-compat.ts`, `tools/enhanced-canvas-renderer.ts`)
+  - Full support for JSON Canvas node types (text, file, link, group)
+  - Bi-directional YAML ↔ JSON Canvas conversion
+  - Enhanced rendering with colors, edge positioning, and arrows
+  - Auto-format detection and backward compatibility
+  - Enhanced CLI v0.3.0 with unified canvas commands
   - Template-based HTML serving with SVG injection
   - REST API endpoints for canvas data management
 
