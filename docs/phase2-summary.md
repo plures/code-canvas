@@ -2,32 +2,22 @@
 
 ## 🎉 Completed
 
-### Interactive Canvas Server (`tools/canvas-server.ts`)
+### Interactive Canvas Server
 
-**Web-based live preview server with:**
+**Web-based live preview with:**
 
-- ✅ Real-time canvas viewing
-- ✅ Auto-reload on file changes
+- ✅ Real-time viewing and auto-reload
 - ✅ Pan/zoom/fit controls
-- ✅ Node search and filtering
-- ✅ Interactive node selection
+- ✅ Node search/selection
 - ✅ Hover tooltips
 - ✅ SVG export
-- ✅ Dark mode interface
-- ✅ Responsive layout
+- ✅ Dark mode UI
 
-### Enhanced CLI Integration
+### CLI Integration
 
 - ✅ `canvas serve` command
-- ✅ File and port options
-- ✅ Watch mode toggle
-- ✅ Comprehensive help text
-
-### Documentation
-
-- ✅ Canvas server guide
-- ✅ Usage examples
-- ✅ Troubleshooting tips
+- ✅ File/port options
+- ✅ Watch mode
 
 ## 🚀 Usage
 
@@ -36,107 +26,62 @@
 deno task canvas serve
 
 # With options
-deno task canvas serve --file demo.canvas.yaml --port 8080
-
-# Access at
-http://localhost:8080
+deno task canvas serve -f demo.yaml -p 8080
 ```
 
-## 🎨 Features Demo
+Access at: `http://localhost:8080`
 
-### Interactive Viewer
+## 🎨 Features
 
-- **Zoom**: In/out/reset/fit controls
-- **Search**: Filter nodes by name or ID
-- **Selection**: Click nodes to highlight
-- **Tooltips**: Hover for node details
-- **Export**: Download as SVG
+**Interactive Viewer:**
 
-### Live Preview Workflow
+- Zoom controls
+- Search nodes
+- Click to highlight
+- Hover tooltips
+- Export SVG
 
-1. Start: `deno task canvas serve`
-2. Edit: `sot/canvas/demo.canvas.yaml`
-3. Save: Browser auto-refreshes
-4. Iterate: Instant feedback
+**Live Workflow:**
 
-## 📊 Technical Highlights
+1. Start server
+2. Edit YAML
+3. Auto-refresh
+4. Iterate fast
 
-### Architecture
+## 📊 Technical
 
-- Deno HTTP server with built-in serve API
-- Polling-based auto-reload (2s interval)
-- Client-side JavaScript for interactivity
-- SVG manipulation and zoom controls
+- Deno HTTP server
+- Polling auto-reload (2s)
+- Client-side interactivity
+- SVG manipulation
 
-### Interface Design
-
-- Modern dark theme
-- Three-panel layout (header/canvas/info)
-- Responsive and resizable
-- Keyboard-friendly (future enhancement)
-
-## 🎯 Phase 2 Status
+## 🎯 Status
 
 **Complete:**
 
-- ✅ Interactive canvas viewer
-- ✅ Live preview server
-- ✅ Node search/selection
-- ✅ Auto-reload functionality
+- ✅ Interactive viewer
+- ✅ Live preview
+- ✅ Auto-reload
 
 **Remaining:**
 
-- ⏳ In-browser YAML editor
-- ⏳ Drag-and-drop node positioning
-- ⏳ Visual layout tools
-- ⏳ Real-time collaboration
+- ⏳ YAML editor
+- ⏳ Drag-and-drop
+- ⏳ Layout tools
 
 ## 📈 Impact
 
-### Developer Experience
+- Faster iteration
+- Better visualization
+- Easier debugging
+- Professional output
 
-- **Faster iteration**: See changes immediately
-- **Better visualization**: Interactive exploration
-- **Easier debugging**: Search and inspect nodes
-- **Professional output**: Export-ready diagrams
+## 🔮 Next
 
-### Use Cases
+**Phase 2:** YAML editor, drag-and-drop
 
-1. **Design reviews**: Share live preview URL
-2. **Documentation**: Generate visual docs
-3. **Teaching**: Demonstrate system architecture
-4. **Planning**: Visualize project structure
+**Phase 3:** VS Code extension
 
-## 🔮 Next Steps
+**Phase 4:** AI logging
 
-### Phase 2 Completion
-
-- Add YAML editor panel with syntax highlighting
-- Implement drag-and-drop for node positioning
-- Add undo/redo for visual edits
-- Support multiple canvas tabs
-
-### Phase 3 Completion
-
-- Build VS Code extension
-- Add intelligent auto-fix validator
-- Integrate with IDE workflows
-
-### Phase 4 Planning
-
-- AI agent logging system
-- Smart recommendations
-- Behavior analytics
-
-## 🎊 Celebration
-
-**Phase 2 Partial Complete!** The interactive canvas server transforms static YAML into
-an engaging, explorable visual experience. Combined with Phase 1's validation and
-Phase 3's CLI tools, Code Canvas is becoming a powerful development companion.
-
-**Total Progress:** ~60% of MVP complete
-
-- ✅ Phase 1: 100%
-- ✅ Phase 2: 50%
-- ✅ Phase 3: 70%
-- ⏳ Phase 4: 0%
+**Progress:** ~60% MVP complete

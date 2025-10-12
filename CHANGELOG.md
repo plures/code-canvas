@@ -9,7 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Interactive Canvas Server** (`tools/canvas-server.ts`)
+- **Interactive Canvas Editor** (`tools/canvas-server-v2.ts`, `tools/canvas-editor.html`)
+  - Full drag-and-drop editing with grid snap (20px)
+  - Create, edit, and delete nodes and edges via modals
+  - Real-time YAML persistence with save functionality
+  - Interactive node positioning with visual feedback
+  - Side panel with node list and property editor
+  - Raw YAML editor for advanced node configuration
+  - Zoom controls (In/Out/Fit) and export to YAML
+  - Server-side logging for debugging drag operations
+  - Template-based HTML serving with SVG injection
+  - REST API endpoints for canvas data management
+
+- **Enhanced Canvas Server** (`tools/canvas-server.ts`)
   - Web-based live preview with auto-reload
   - Interactive node selection and highlighting
   - Hover tooltips with node details
@@ -39,6 +51,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Complete command reference
   - Usage examples and workflows
   - Quick reference table
+
+### Fixed
+
+- **Canvas Editor Template Replacement Bug**
+  - Fixed `.replace()` vs `.replaceAll()` issue causing JavaScript syntax errors
+  - Template variables now properly replaced in all occurrences
+  - Resolved "Unexpected token '{'" errors that prevented script loading
+- **Drag-and-Drop Functionality**
+  - Fixed event listener attachment after SVG template injection
+  - Removed object literal syntax that caused browser parsing issues
+  - Simplified logging calls to avoid optional chaining compatibility problems
+- **CLI Command Routing**
+  - Fixed "canvas serve" command not routing to correct server
+  - Corrected parseArgs import syntax issues
+  - Fixed file path handling to prevent double-prepending directories
+
+### Changed
+
+- Migrated from `tools/canvas-server.ts` (read-only viewer) to `tools/canvas-server-v2.ts` (full editor)
+- Replaced external JavaScript file with inlined script for better template compatibility
+- Enhanced logging system with both browser console and server terminal output
+- Updated CLI to route canvas commands to new interactive editor
 
 ## [0.2.0] - 2024-10-07 - Phase 1 Complete
 

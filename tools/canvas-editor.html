@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Editor - {{CANVAS_FILE}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 100;
+        }
+        .header h1 { font-size: 18px; font-weight: 600; }
+        .header .file-name { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+        .toolbar {
+            padding: 8px 10px;
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 6px 10px;
+            border: 1px solid #464647;
+            background: #3e3e42;
+            color: #d4d4d4;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn:hover { background: #505052; border-color: #565658; }
+        .btn.primary { background: #0e639c; border-color: #0e639c; }
+        .btn.primary:hover { background: #1177bb; }
+        .btn.success { background: #107c10; border-color: #107c10; }
+        .btn.success:hover { background: #0f6e0f; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .toolbar-sep { width: 1px; height: 20px; background: #464647; margin: 0 4px; }
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        .canvas-viewport {
+            flex: 1;
+            overflow: auto;
+            background: #252526;
+            position: relative;
+        }
+        #canvas-svg {
+            display: inline-block;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .side-panel {
+            width: 280px;
+            background: #252526;
+            border-left: 1px solid #3e3e42;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .panel-section {
+            margin-bottom: 16px;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .panel-section h3 {
+            font-size: 12px;
+            margin-bottom: 8px;
+            color: #569cd6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .node-item {
+            padding: 6px 8px;
+            margin: 4px 0;
+            background: #3c3c3c;
+            border: 1px solid #3e3e42;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.15s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .node-item:hover { background: #37373d; border-color: #569cd6; }
+        .node-item.selected { border-color: #569cd6; background: #37373d; }
+        .node-type {
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 2px;
+            font-size: 9px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .type-box { background: #e1f5fe; color: #01579b; }
+        .type-fsm { background: #f3e5f5; color: #4a148c; }
+        .type-control { background: #e8f5e8; color: #1b5e20; }
+        .type-doc { background: #fff3e0; color: #e65100; }
+        .type-database { background: #fce4ec; color: #880e4f; }
+        input, select, textarea {
+            width: 100%;
+            padding: 6px;
+            background: #3c3c3c;
+            border: 1px solid #3e3e42;
+            border-radius: 3px;
+            color: #d4d4d4;
+            font-size: 11px;
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #569cd6;
+        }
+        label {
+            display: block;
+            font-size: 10px;
+            color: #9cdcfe;
+            margin-bottom: 4px;
+            margin-top: 8px;
+        }
+        label:first-child { margin-top: 0; }
+        .btn-group {
+            display: flex;
+            gap: 4px;
+            margin-top: 8px;
+        }
+        .btn-group .btn {
+            flex: 1;
+            padding: 5px;
+            font-size: 10px;
+        }
+        .status-bar {
+            padding: 6px 15px;
+            background: #007acc;
+            color: white;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-bar .mode {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .mode-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 6px;
+            padding: 20px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .modal-content h2 {
+            font-size: 16px;
+            margin-bottom: 16px;
+            color: #569cd6;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>🎨 Canvas Editor</h1>
+            <div class="file-name">{{CANVAS_FILE}}</div>
+        </div>
+        <div class="mode">
+            <span class="mode-indicator"></span>
+            <span id="edit-mode">Edit Mode</span>
+        </div>
+    </div>
+    
+    <div class="toolbar">
+        <button class="btn" onclick="addNode()">➕ Node</button>
+        <button class="btn" onclick="addEdge()">🔗 Edge</button>
+        <button class="btn" onclick="deleteSelected()">🗑️ Delete</button>
+        <div class="toolbar-sep"></div>
+        <button class="btn" onclick="zoomIn()">🔍+</button>
+        <button class="btn" onclick="zoomOut()">🔍−</button>
+        <button class="btn" onclick="fitToScreen()">⛶ Fit</button>
+        <div class="toolbar-sep"></div>
+        <button class="btn success" onclick="saveCanvas()">💾 Save</button>
+        <button class="btn" onclick="downloadYaml()">⬇️ Export</button>
+    </div>
+    
+    <div class="canvas-container">
+        <div class="canvas-viewport" id="viewport">
+            <div id="canvas-svg">{{SVG_CONTENT}}</div>
+        </div>
+        
+        <div class="side-panel">
+            <div class="panel-section">
+                <h3>Selection</h3>
+                <div id="selection-info">
+                    <p style="font-size:11px;color:#888;">Click a node to edit</p>
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <h3>YAML Editor</h3>
+                <textarea id="yaml-editor" placeholder="Select a node to edit YAML..." style="width:100%;height:150px;font-family:monospace;font-size:11px;background:#1e1e1e;color:#d4d4d4;border:1px solid #444;padding:8px;resize:vertical;"></textarea>
+                <button onclick="applyYaml()" style="margin-top:8px;width:100%;">Apply YAML Changes</button>
+            </div>
+            
+            <div class="panel-section">
+                <h3>Nodes</h3>
+                <div id="node-list"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="status-bar">
+        <span id="status">Ready • Grid: {{GRID_SIZE}}px • Snap enabled</span>
+        <span id="stats">0 nodes • 0 edges</span>
+    </div>
+    
+    <div class="modal" id="node-modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Create Node</h2>
+            <label>ID</label>
+            <input type="text" id="node-id" placeholder="unique-id">
+            <label>Type</label>
+            <select id="node-type">
+                <option value="box">Box - General component</option>
+                <option value="fsm">FSM - State machine</option>
+                <option value="control">Control - Logic/flow</option>
+                <option value="doc">Doc - Documentation</option>
+                <option value="database">Database - Data store</option>
+            </select>
+            <label>Label</label>
+            <input type="text" id="node-label" placeholder="Display name">
+            <label>Width</label>
+            <input type="number" id="node-width" value="120" min="60" step="20">
+            <label>Height</label>
+            <input type="number" id="node-height" value="60" min="40" step="20">
+            <div class="btn-group">
+                <button class="btn" onclick="closeModal()">Cancel</button>
+                <button class="btn primary" onclick="confirmNode()">Create</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="edge-modal">
+        <div class="modal-content">
+            <h2>Create Edge</h2>
+            <label>From Node</label>
+            <select id="edge-from"></select>
+            <label>To Node</label>
+            <select id="edge-to"></select>
+            <label>Edge Type</label>
+            <select id="edge-kind">
+                <option value="implements">Implements - Implementation</option>
+                <option value="guards">Guards - Conditional check</option>
+                <option value="triggers">Triggers - Event/action</option>
+                <option value="tests">Tests - Verification</option>
+                <option value="docs">Docs - Documentation link</option>
+            </select>
+            <label>Label (optional)</label>
+            <input type="text" id="edge-label" placeholder="Edge label">
+            <div class="btn-group">
+                <button class="btn" onclick="closeModal()">Cancel</button>
+                <button class="btn primary" onclick="confirmEdge()">Create</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+// Canvas Editor - Interactive FSM-aware editing v2.0
+console.log('=== SCRIPT STARTED ===');
+const GRID_SIZE = {{GRID_SIZE}};
+console.log('GRID_SIZE:', GRID_SIZE);
+let canvas = { nodes: [], edges: [] };
+let selectedNode = null;
+let isDragging = false;
+let dragNode = null;
+let dragOffset = { x: 0, y: 0 };
+let currentZoom = 1;
+
+// Logging helper - sends to both console and server terminal
+function log(message, data) {
+    console.log(`[Canvas Editor] ${message}`, data || '');
+    
+    // Also send to server terminal
+    try {
+        let dataStr = '';
+        if (data) {
+            try {
+                dataStr = JSON.stringify(data, null, 2);
+            } catch (err) {
+                dataStr = String(data);
+            }
+        }
+        
+        fetch('/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                level: 'INFO', 
+                message: message, 
+                data: dataStr
+            })
+        }).catch(() => {}); // Silently fail if server unavailable
+    } catch (err) {
+        // Ignore logging errors
+    }
+}
+
+// Load canvas data from server
+async function loadCanvas() {
+    try {
+        log('Loading canvas data from /api/canvas');
+        const res = await fetch('/api/canvas');
+        canvas = await res.json();
+        log('Canvas loaded - nodes: ' + canvas.nodes.length + ', edges: ' + canvas.edges.length);
+        renderNodeList();
+        updateStats();
+    } catch (e) {
+        console.error('Failed to load canvas:', e);
+    }
+}
+
+// Save canvas to server
+async function saveCanvas() {
+    try {
+        const res = await fetch('/api/canvas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(canvas)
+        });
+        if (res.ok) {
+            showStatus('✅ Saved successfully', 2000);
+        } else {
+            showStatus('❌ Save failed', 2000);
+        }
+    } catch (e) {
+        showStatus('❌ Save error: ' + e.message, 2000);
+    }
+}
+
+// Initialize drag & drop for nodes
+function initDragDrop() {
+    log('initDragDrop called');
+    const svgContainer = document.getElementById('canvas-svg');
+    if (svgContainer) {
+        const containerPreview = svgContainer.innerHTML ? svgContainer.innerHTML.substring(0, 100) : 'empty';
+        log('SVG container found: ' + containerPreview);
+    } else {
+        log('SVG container NOT found');
+    }
+    
+    const svg = document.querySelector('svg');
+    if (!svg) {
+        if (svgContainer) {
+            const containerHTML = svgContainer.innerHTML ? svgContainer.innerHTML.substring(0, 200) : 'empty';
+            log('ERROR: SVG element not found! Container: ' + containerHTML);
+            log('All SVGs count: ' + document.querySelectorAll('svg').length);
+        } else {
+            log('ERROR: SVG element not found and container missing');
+        }
+        return;
+    }
+    
+    const svgWidth = svg.getAttribute('width') || 'unknown';
+    const svgHeight = svg.getAttribute('height') || 'unknown';
+    const svgParent = svg.parentElement ? svg.parentElement.id : 'no parent';
+    log('Initializing drag & drop - size: ' + svgWidth + 'x' + svgHeight);
+    log('SVG id: ' + (svg.id || 'no id'));
+    log('SVG parent: ' + svgParent);
+    svg.style.cursor = 'default';
+    
+    // Mouse down on nodes
+    svg.addEventListener('mousedown', (e) => {
+        log('SVG mousedown - target: ' + e.target.tagName + ', id: ' + e.target.id + ', pos: ' + e.clientX + ',' + e.clientY);
+        
+        const target = e.target;
+        if (!target) {
+            log('No target element');
+            return;
+        }
+        
+        // Check if clicked on a rect or text in a node
+        let nodeEl = null;
+        if (target.tagName === 'rect' || target.tagName === 'text') {
+            nodeEl = target.closest('.node');
+            const foundId = nodeEl ? nodeEl.id : 'none';
+            log('Found node element via rect/text - id: ' + foundId);
+        }
+        
+        if (!nodeEl) {
+            log('Click was not on a node');
+            return;
+        }
+        
+        e.preventDefault();
+        const nodeId = nodeEl.id.replace('node-', '');
+        const node = canvas.nodes.find(n => n.id === nodeId);
+        if (!node) {
+            log('ERROR: Node not found in canvas data - nodeId: ' + nodeId);
+            return;
+        }
+        
+        log('Starting drag - nodeId: ' + nodeId + ', pos: ' + node.x + ',' + node.y + ', size: ' + node.w + 'x' + node.h);
+        
+        isDragging = true;
+        dragNode = node;
+        
+        // Calculate offset from node origin to click point
+        const rect = svg.getBoundingClientRect();
+        const svgX = (e.clientX - rect.left) / currentZoom;
+        const svgY = (e.clientY - rect.top) / currentZoom;
+        
+        dragOffset.x = svgX - node.x;
+        dragOffset.y = svgY - node.y;
+        
+        log('Drag offset calculated - svgCoords: ' + svgX + ',' + svgY + ', offset: ' + dragOffset.x + ',' + dragOffset.y + ', zoom: ' + currentZoom);
+        
+        nodeEl.style.opacity = '0.7';
+        svg.style.cursor = 'grabbing';
+        selectNode(nodeId);
+    });
+    
+    // Mouse move
+    svg.addEventListener('mousemove', (e) => {
+        if (!isDragging || !dragNode) return;
+        
+        e.preventDefault();
+        const rect = svg.getBoundingClientRect();
+        const svgX = (e.clientX - rect.left) / currentZoom;
+        const svgY = (e.clientY - rect.top) / currentZoom;
+        
+        let newX = svgX - dragOffset.x;
+        let newY = svgY - dragOffset.y;
+        
+        // Snap to grid
+        const snappedX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+        const snappedY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+        
+        const dx = snappedX - dragNode.x;
+        const dy = snappedY - dragNode.y;
+        log('Dragging - raw: ' + newX + ',' + newY + ', snapped: ' + snappedX + ',' + snappedY + ', movement: ' + dx + ',' + dy);
+        
+        dragNode.x = Math.max(0, snappedX);
+        dragNode.y = Math.max(0, snappedY);
+        
+        updateNodePosition(dragNode);
+        updateEdges();
+    });
+    
+    // Mouse up
+    svg.addEventListener('mouseup', () => {
+        if (isDragging && dragNode) {
+            log('Drag ended - nodeId: ' + dragNode.id + ', finalPos: ' + dragNode.x + ',' + dragNode.y);
+            
+            const nodeEl = document.getElementById(`node-${dragNode.id}`);
+            if (nodeEl) nodeEl.style.opacity = '1';
+            
+            isDragging = false;
+            dragNode = null;
+            svg.style.cursor = 'default';
+            showStatus('Node moved • Press Save to persist changes');
+        }
+    });
+    
+    // Mouse leave
+    svg.addEventListener('mouseleave', () => {
+        if (isDragging && dragNode) {
+            log('Mouse left SVG during drag - nodeId: ' + dragNode.id);
+            const nodeEl = document.getElementById(`node-${dragNode.id}`);
+            if (nodeEl) nodeEl.style.opacity = '1';
+            isDragging = false;
+            dragNode = null;
+            svg.style.cursor = 'default';
+        }
+    });
+    
+    log('Drag & drop initialized - event listeners attached to SVG');
+}
+
+// Update node position in SVG
+function updateNodePosition(node) {
+    log('Updating node position - nodeId: ' + node.id + ', x: ' + node.x + ', y: ' + node.y);
+    const nodeEl = document.getElementById(`node-${node.id}`);
+    if (!nodeEl) {
+        log('ERROR: Node element not found in DOM - nodeId: ' + node.id);
+        return;
+    }
+    
+    const rect = nodeEl.querySelector('rect');
+    const text = nodeEl.querySelector('text');
+    
+    if (rect) {
+        rect.setAttribute('x', node.x);
+        rect.setAttribute('y', node.y);
+        log('Rect position updated - x: ' + node.x + ', y: ' + node.y);
+    } else {
+        log('ERROR: Rect element not found');
+    }
+    
+    if (text) {
+        text.setAttribute('x', node.x + node.w / 2);
+        text.setAttribute('y', node.y + node.h / 2);
+        const textX = node.x + node.w / 2;
+        const textY = node.y + node.h / 2;
+        log('Text position updated - x: ' + textX + ', y: ' + textY);
+    } else {
+        log('ERROR: Text element not found');
+    }
+}
+
+// Update all edges after node move
+function updateEdges() {
+    canvas.edges.forEach(edge => {
+        const from = canvas.nodes.find(n => n.id === edge.from);
+        const to = canvas.nodes.find(n => n.id === edge.to);
+        if (!from || !to) return;
+        
+        const edgeEl = document.getElementById(`edge-${edge.from}-${edge.to}`);
+        if (!edgeEl) return;
+        
+        const line = edgeEl.querySelector('line');
+        const polygon = edgeEl.querySelector('polygon');
+        const text = edgeEl.querySelector('text');
+        
+        const x1 = from.x + from.w / 2;
+        const y1 = from.y + from.h / 2;
+        const x2 = to.x + to.w / 2;
+        const y2 = to.y + to.h / 2;
+        
+        if (line) {
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+        }
+        
+        // Update arrow
+        if (polygon) {
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const size = 10;
+            const ax1 = x2 - size * Math.cos(angle - Math.PI / 6);
+            const ay1 = y2 - size * Math.sin(angle - Math.PI / 6);
+            const ax2 = x2 - size * Math.cos(angle + Math.PI / 6);
+            const ay2 = y2 - size * Math.sin(angle + Math.PI / 6);
+            polygon.setAttribute('points', `${x2},${y2} ${ax1},${ay1} ${ax2},${ay2}`);
+        }
+        
+        if (text) {
+            text.setAttribute('x', (x1 + x2) / 2);
+            text.setAttribute('y', (y1 + y2) / 2 - 5);
+        }
+    });
+}
+
+// Node selection
+function selectNode(nodeId) {
+    selectedNode = nodeId;
+    const node = canvas.nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    
+    // Update list
+    document.querySelectorAll('.node-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.id === nodeId);
+    });
+    
+    // Show properties
+    document.getElementById('selection-info').innerHTML = `
+        <label>ID</label>
+        <input type="text" value="${node.id}" disabled>
+        <label>Type</label>
+        <input type="text" value="${node.type}" disabled>
+        <label>Label</label>
+        <input type="text" id="edit-label" value="${node.label || node.id}">
+        <label>Position</label>
+        <div style="display:flex;gap:4px;">
+            <input type="number" id="edit-x" value="${node.x}" style="width:50%;">
+            <input type="number" id="edit-y" value="${node.y}" style="width:50%;">
+        </div>
+        <label>Size</label>
+        <div style="display:flex;gap:4px;">
+            <input type="number" id="edit-w" value="${node.w}" style="width:50%;">
+            <input type="number" id="edit-h" value="${node.h}" style="width:50%;">
+        </div>
+        <div class="btn-group">
+            <button class="btn" onclick="applyNodeEdit()">Apply</button>
+            <button class="btn" onclick="clearSelection()">Clear</button>
+        </div>
+    `;
+    
+    // Update YAML editor
+    updateYamlEditor();
+}
+
+function updateYamlEditor() {
+    const yamlEditor = document.getElementById('yaml-editor');
+    if (!selectedNode) {
+        yamlEditor.value = '';
+        yamlEditor.placeholder = 'Select a node to edit YAML...';
+        return;
+    }
+    
+    const node = canvas.nodes.find(n => n.id === selectedNode);
+    if (!node) return;
+    
+    // Generate YAML for the node
+    let yaml = '- id: ' + node.id + '\n';
+    yaml += '  type: ' + node.type + '\n';
+    yaml += '  label: ' + (node.label || node.id) + '\n';
+    yaml += '  x: ' + node.x + '\n';
+    yaml += '  y: ' + node.y + '\n';
+    yaml += '  w: ' + node.w + '\n';
+    yaml += '  h: ' + node.h;
+    
+    yamlEditor.value = yaml;
+}
+
+function applyYaml() {
+    if (!selectedNode) {
+        showStatus('No node selected', 2000);
+        return;
+    }
+    
+    const node = canvas.nodes.find(n => n.id === selectedNode);
+    if (!node) return;
+    
+    const yamlText = document.getElementById('yaml-editor').value;
+    
+    try {
+        // Simple YAML parser for node properties
+        const lines = yamlText.split('\n');
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('label:')) {
+                node.label = trimmed.substring(6).trim();
+            } else if (trimmed.startsWith('x:')) {
+                node.x = parseInt(trimmed.substring(2).trim());
+            } else if (trimmed.startsWith('y:')) {
+                node.y = parseInt(trimmed.substring(2).trim());
+            } else if (trimmed.startsWith('w:')) {
+                node.w = parseInt(trimmed.substring(2).trim());
+            } else if (trimmed.startsWith('h:')) {
+                node.h = parseInt(trimmed.substring(2).trim());
+            }
+        }
+        
+        updateNodePosition(node);
+        selectNode(selectedNode); // Refresh the form
+        showStatus('YAML applied successfully', 2000);
+        
+    } catch (e) {
+        showStatus('Invalid YAML: ' + e.message, 3000);
+    }
+}
+
+function applyNodeEdit() {
+    if (!selectedNode) return;
+    const node = canvas.nodes.find(n => n.id === selectedNode);
+    if (!node) return;
+    
+    node.label = document.getElementById('edit-label').value;
+    node.x = parseInt(document.getElementById('edit-x').value);
+    node.y = parseInt(document.getElementById('edit-y').value);
+    node.w = parseInt(document.getElementById('edit-w').value);
+    node.h = parseInt(document.getElementById('edit-h').value);
+    
+    updateNodePosition(node);
+    
+    // Update rect size
+    const rect = document.querySelector(`#node-${node.id} rect`);
+    if (rect) {
+        rect.setAttribute('width', node.w);
+        rect.setAttribute('height', node.h);
+    }
+    
+    updateEdges();
+    
+    const text = document.querySelector(`#node-${node.id} text`);
+    if (text) text.textContent = node.label || node.id;
+    
+    showStatus('Node updated • Press Save to persist');
+}
+
+function clearSelection() {
+    selectedNode = null;
+    document.querySelectorAll('.node-item').forEach(item => item.classList.remove('selected'));
+    document.getElementById('selection-info').innerHTML = '<p style="font-size:11px;color:#888;">Click a node to edit</p>';
+    document.getElementById('yaml-editor').value = '';
+    document.getElementById('yaml-editor').placeholder = 'Select a node to edit YAML...';
+}
+
+// Node list rendering
+function renderNodeList() {
+    const list = document.getElementById('node-list');
+    list.innerHTML = canvas.nodes.map(node => `
+        <div class="node-item" data-id="${node.id}" onclick="selectNode('${node.id}')">
+            <div>
+                <span class="node-type type-${node.type}">${node.type}</span>
+                <span>${node.label || node.id}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Modal management
+function showModal(id) {
+    document.getElementById(id).classList.add('show');
+}
+
+function closeModal() {
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+}
+
+// Add node modal
+function addNode() {
+    document.getElementById('modal-title').textContent = 'Create Node';
+    document.getElementById('node-id').value = `node-${Date.now()}`;
+    document.getElementById('node-label').value = '';
+    showModal('node-modal');
+}
+
+function confirmNode() {
+    const node = {
+        id: document.getElementById('node-id').value,
+        type: document.getElementById('node-type').value,
+        label: document.getElementById('node-label').value,
+        x: 100,
+        y: 100,
+        w: parseInt(document.getElementById('node-width').value),
+        h: parseInt(document.getElementById('node-height').value)
+    };
+    
+    if (!node.id || canvas.nodes.find(n => n.id === node.id)) {
+        alert('Invalid or duplicate ID');
+        return;
+    }
+    
+    canvas.nodes.push(node);
+    location.reload();
+    closeModal();
+}
+
+// Add edge modal
+function addEdge() {
+    const fromSelect = document.getElementById('edge-from');
+    const toSelect = document.getElementById('edge-to');
+    
+    const options = canvas.nodes.map(n => 
+        `<option value="${n.id}">${n.label || n.id}</option>`
+    ).join('');
+    
+    fromSelect.innerHTML = options;
+    toSelect.innerHTML = options;
+    
+    showModal('edge-modal');
+}
+
+function confirmEdge() {
+    const edge = {
+        from: document.getElementById('edge-from').value,
+        to: document.getElementById('edge-to').value,
+        kind: document.getElementById('edge-kind').value,
+        label: document.getElementById('edge-label').value || undefined
+    };
+    
+    if (!edge.from || !edge.to || edge.from === edge.to) {
+        alert('Select two different nodes');
+        return;
+    }
+    
+    canvas.edges.push(edge);
+    location.reload();
+    closeModal();
+}
+
+// Delete selected node
+function deleteSelected() {
+    if (!selectedNode) {
+        alert('No node selected');
+        return;
+    }
+    
+    if (!confirm(`Delete node "${selectedNode}" and its edges?`)) return;
+    
+    canvas.nodes = canvas.nodes.filter(n => n.id !== selectedNode);
+    canvas.edges = canvas.edges.filter(e => e.from !== selectedNode && e.to !== selectedNode);
+    
+    location.reload();
+}
+
+// Zoom controls
+function zoomIn() {
+    currentZoom *= 1.2;
+    updateZoom();
+}
+
+function zoomOut() {
+    currentZoom /= 1.2;
+    updateZoom();
+}
+
+function updateZoom() {
+    const container = document.getElementById('canvas-svg');
+    container.style.transform = `scale(${currentZoom})`;
+    container.style.transformOrigin = 'top left';
+}
+
+function fitToScreen() {
+    currentZoom = 1;
+    updateZoom();
+}
+
+// Export YAML
+function downloadYaml() {
+    const yaml = `nodes:\n${canvas.nodes.map(n => 
+        `  - id: ${n.id}\n    type: ${n.type}\n    label: "${n.label || n.id}"\n    x: ${n.x}\n    y: ${n.y}\n    w: ${n.w}\n    h: ${n.h}`
+    ).join('\n')}\n\nedges:\n${canvas.edges.map(e => 
+        `  - from: ${e.from}\n    to: ${e.to}\n    kind: ${e.kind}${e.label ? `\n    label: "${e.label}"` : ''}`
+    ).join('\n')}`;
+    
+    const blob = new Blob([yaml], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'canvas.yaml';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Status messages
+function showStatus(msg, duration = 5000) {
+    document.getElementById('status').textContent = msg;
+    if (duration > 0) {
+        setTimeout(() => {
+            document.getElementById('status').textContent = `Ready • Grid: ${GRID_SIZE}px • Snap enabled`;
+        }, duration);
+    }
+}
+
+function updateStats() {
+    document.getElementById('stats').textContent = 
+        `${canvas.nodes.length} nodes • ${canvas.edges.length} edges`;
+}
+
+// Initialize on load
+window.addEventListener('load', async () => {
+    log('Window loaded, starting initialization');
+    await loadCanvas();
+    log('Canvas loaded, initializing drag & drop');
+    initDragDrop();
+    showStatus(`Ready • Grid: ${GRID_SIZE}px • Snap enabled`);
+    log('Initialization complete');
+});
+    </script>
+</body>
+</html>

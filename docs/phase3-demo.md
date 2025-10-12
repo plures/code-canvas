@@ -1,27 +1,20 @@
-# Phase 3 Demo - Developer Experience Enhancements
+# Phase 3 Demo - Developer Experience
 
-This demo showcases the new CLI and CI/CD features added in Phase 3.
+Showcases the new CLI and CI/CD features added in Phase 3.
 
 ## 🎨 Unified CLI Interface
 
-### Check Version
+### Basic Commands
 
 ```bash
+# Check version
 deno task canvas --version
-# Output: Code Canvas CLI v0.2.0
-```
 
-### Canvas Commands
-
-```bash
-# List all canvas files
+# List canvas files
 deno task canvas canvas list
 
 # Render all canvases
 deno task canvas canvas render --all
-
-# Render specific canvas
-deno task canvas canvas render --file sot/canvas/demo.canvas.yaml
 ```
 
 ### Activity Management
@@ -30,162 +23,86 @@ deno task canvas canvas render --file sot/canvas/demo.canvas.yaml
 # Check current activity
 deno task canvas activity status
 
-# View transition history
-deno task canvas activity history
-
 # Switch activity
 deno task canvas activity switch --to implementation
+
+# View history
+deno task canvas activity history
 ```
 
 ### Validation
 
 ```bash
-# Validate guardian rules
+# Validate rules
 deno task canvas validate check
 
-# Validate YAML schemas
+# Validate schemas
 deno task canvas validate config
-
-# Auto-fix (coming soon)
-deno task canvas validate fix --dry-run
-```
-
-### Project Initialization
-
-```bash
-# Initialize new project
-deno task canvas init
-
-# Initialize with name
-deno task canvas init --name my-project
 ```
 
 ## 🔧 CI/CD Templates
 
 ### GitHub Actions
 
-Copy the template to your repo:
-
 ```bash
 cp templates/ci-cd/github-actions.yml .github/workflows/code-canvas.yml
 ```
 
-Features:
-
-- ✅ Validates guardian rules on every push/PR
-- ✅ Checks YAML schemas
-- ✅ Runs unit tests
-- ✅ Renders canvases and uploads as artifacts
-- ✅ Activity-based validation
-
 ### GitLab CI
-
-Merge into your `.gitlab-ci.yml`:
 
 ```bash
 cat templates/ci-cd/gitlab-ci.yml >> .gitlab-ci.yml
 ```
 
-Features:
-
-- ✅ Multi-stage pipeline (validate, test, render)
-- ✅ Artifact generation for rendered canvases
-- ✅ Activity-specific validation rules
-
 ### Azure Pipelines
-
-Copy to your repo:
 
 ```bash
 cp templates/ci-cd/azure-pipelines.yml azure-pipelines.yml
 ```
 
-Features:
-
-- ✅ Multi-stage validation and testing
-- ✅ PR-specific activity checks
-- ✅ Artifact publishing for documentation
-
 ## 📦 Project Templates
 
-Quick start with pre-configured templates:
-
 ```bash
-# Basic template
-deno task canvas init
-
-# Creates:
-# - sot/ directory structure
-# - .githooks/ with pre-commit validation
-# - docs/ with setup guides
-# - tools/ with core utilities
+# Initialize new project
+deno task canvas init --name awesome-project
 ```
 
-## 🚀 Complete Workflow Example
+## 🚀 Quick Workflow
 
 ```bash
-# 1. Initialize project
-deno task canvas init --name awesome-project
-cd awesome-project
-
-# 2. Install hooks
+# Initialize
+deno task canvas init
 deno task prepare-hooks
 
-# 3. Check status
+# Check status
 deno task canvas activity status
 
-# 4. List canvases
-deno task canvas canvas list
-
-# 5. Render documentation
+# Render and validate
 deno task canvas canvas render --all
-
-# 6. Validate everything
 deno task canvas validate check
-deno task canvas validate config
 
-# 7. Run tests
+# Run tests
 deno task test
-
-# 8. Switch to implementation
-deno task canvas activity switch --to implementation --note "Starting dev work"
-
-# 9. Build and validate
-# ... make code changes ...
-deno task canvas validate check
-
-# 10. View history
-deno task canvas activity history
 ```
 
 ## 📚 Documentation
 
-- **CLI Guide**: `docs/cli-guide.md` - Complete command reference
-- **Setup Guide**: `docs/setup-guide.md` - Getting started
-- **CI/CD Templates**: `templates/ci-cd/README.md` - Integration guide
-- **Project Templates**: `templates/project/README.md` - Quick start
+- **CLI Guide**: `docs/cli-guide.md`
+- **Setup Guide**: `docs/setup-guide.md`
+- **CI/CD**: `templates/ci-cd/README.md`
+- **Templates**: `templates/project/README.md`
 
 ## ✨ Key Improvements
 
-1. **Unified Interface**: Single `canvas` command instead of multiple tools
-2. **Better UX**: Intuitive subcommands with helpful error messages
-3. **CI/CD Ready**: Production-ready templates for major platforms
-4. **Quick Start**: Initialize new projects in seconds
-5. **Documentation**: Comprehensive guides for all features
+1. **Unified Interface** - Single `canvas` command
+2. **Better UX** - Intuitive subcommands
+3. **CI/CD Ready** - Production templates
+4. **Quick Start** - Initialize in seconds
 
-## 🎯 What's Next?
+## 🎯 What's Next
 
-**Phase 3 Remaining:**
+**Phase 3 Remaining:** VS Code extension, auto-fix validator
 
-- VS Code extension (syntax highlighting, canvas preview)
-- Smart auto-fix validator
+**Phase 2:** Interactive canvas editor
 
-**Phase 2 Options:**
-
-- Interactive canvas editor
-- Live preview in browser
-
-**Phase 4 Options:**
-
-- AI agent logging and analytics
-- Smart recommendations
+**Phase 4:** AI agent logging and analytics

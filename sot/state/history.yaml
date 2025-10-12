@@ -1,7 +1,16 @@
 history:
-  - timestamp: "2025-10-07T21:20:17.776165Z"
-    from: "initial"
-    to: "design"
-    actor: "human"
-    note: "Project initialized"
+  - timestamp: '2025-10-07T21:20:17.776165Z'
+    from: initial
+    to: design
+    actor: human
+    note: Project initialized
     success: true
+  - timestamp: '2025-10-08T04:40:14.453Z'
+    from: implementation
+    to: design
+    actor: human
+    note: Adding Phase 3 templates and docs
+    success: false
+    error: >-
+      Transition from 'implementation' to 'design' is not allowed by lifecycle
+      configuration

@@ -106,13 +106,16 @@ Examples:
     return 0;
   }
 
-  const cmd = ["deno", "run", "-A", "tools/canvas-server.ts"];
+  const cmd = ["deno", "run", "-A", "tools/canvas-server-v2.ts"];
   if (parsed.file) cmd.push("--file", parsed.file);
   if (parsed.port) cmd.push("--port", parsed.port);
   if (!parsed.watch) cmd.push("--no-watch");
 
   const process = new Deno.Command(cmd[0], {
     args: cmd.slice(1),
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
   });
   const { code } = await process.output();
   return code;
@@ -414,12 +417,12 @@ For command-specific help:
 async function main() {
   const args = Deno.args;
 
-  if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
+  if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
     showHelp();
     Deno.exit(0);
   }
 
-  if (args.includes("--version") || args.includes("-v")) {
+  if (args[0] === "--version" || args[0] === "-v") {
     console.log(`Code Canvas CLI v${VERSION}`);
     Deno.exit(0);
   }

@@ -9,7 +9,7 @@
  * - Real-time validation
  */
 
-import { parse as parseArgs } from "jsr:@std/cli/parse-args";
+import { parseArgs } from "jsr:@std/cli/parse-args";
 import { join } from "jsr:@std/path/join";
 import { exists } from "jsr:@std/fs/exists";
 import * as yaml from "jsr:@std/yaml";
@@ -17,10 +17,144 @@ import * as yaml from "jsr:@std/yaml";
 const DEFAULT_PORT = 8080;
 const CANVAS_DIR = "sot/canvas";
 
+// Import canvas renderer types
+interface CanvasNode {
+  id: string;
+  type: "box" | "fsm" | "control" | "doc" | "database";
+  label?: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  props?: Record<string, unknown>;
+  ref?: string;
+}
+
+interface CanvasEdge {
+  from: string;
+  to: string;
+  label?: string;
+  kind?: "triggers" | "guards" | "tests" | "implements" | "docs";
+}
+
+interface Canvas {
+  nodes: CanvasNode[];
+  edges: CanvasEdge[];
+}
+
 interface ServerOptions {
   port: number;
   file?: string;
   watch: boolean;
+}
+
+// Node and edge rendering
+const NODE_STYLES = {
+  box: { fill: "#e1f5fe", stroke: "#01579b", strokeWidth: 2 },
+  fsm: { fill: "#f3e5f5", stroke: "#4a148c", strokeWidth: 3 },
+  control: { fill: "#e8f5e8", stroke: "#1b5e20", strokeWidth: 2 },
+  doc: { fill: "#fff3e0", stroke: "#e65100", strokeWidth: 2 },
+  database: { fill: "#fce4ec", stroke: "#880e4f", strokeWidth: 2 }
+};
+
+const EDGE_STYLES = {
+  triggers: { stroke: "#d32f2f", strokeDasharray: "5,5" },
+  guards: { stroke: "#1976d2", strokeDasharray: "10,2" },
+  tests: { stroke: "#388e3c", strokeDasharray: "3,3" },
+  implements: { stroke: "#f57c00", strokeDasharray: "none" },
+  docs: { stroke: "#7b1fa2", strokeDasharray: "8,4" }
+};
+
+function renderCanvasToSvg(canvas: Canvas): string {
+  // Calculate bounds
+  let maxX = 800;
+  let maxY = 600;
+  
+  if (canvas.nodes.length > 0) {
+    maxX = 0;
+    maxY = 0;
+    for (const node of canvas.nodes) {
+      maxX = Math.max(maxX, node.x + node.w);
+      maxY = Math.max(maxY, node.y + node.h);
+    }
+    maxX += 40;
+    maxY += 40;
+  }
+
+  // Render nodes
+  const renderNode = (node: CanvasNode): string => {
+    const style = NODE_STYLES[node.type] || NODE_STYLES.box;
+    const label = node.label || node.id;
+    
+    return `
+    <g class="node node-${node.type}" id="node-${node.id}">
+      <rect x="${node.x}" y="${node.y}" width="${node.w}" height="${node.h}"
+            fill="${style.fill}" stroke="${style.stroke}" stroke-width="${style.strokeWidth}" rx="5"/>
+      <text x="${node.x + node.w/2}" y="${node.y + node.h/2}" 
+            text-anchor="middle" dominant-baseline="middle"
+            font-family="Arial, sans-serif" font-size="14" font-weight="600">${label}</text>
+    </g>`;
+  };
+
+  // Render edges
+  const renderEdge = (edge: CanvasEdge): string => {
+    const fromNode = canvas.nodes.find(n => n.id === edge.from);
+    const toNode = canvas.nodes.find(n => n.id === edge.to);
+    if (!fromNode || !toNode) return '';
+
+    const x1 = fromNode.x + fromNode.w / 2;
+    const y1 = fromNode.y + fromNode.h / 2;
+    const x2 = toNode.x + toNode.w / 2;
+    const y2 = toNode.y + toNode.h / 2;
+
+    const style = EDGE_STYLES[edge.kind || 'implements'];
+    const strokeDashArray = style.strokeDasharray !== 'none' ? `stroke-dasharray="${style.strokeDasharray}"` : '';
+    
+    // Arrow calculation
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const arrowSize = 10;
+    const arrowX1 = x2 - arrowSize * Math.cos(angle - Math.PI / 6);
+    const arrowY1 = y2 - arrowSize * Math.sin(angle - Math.PI / 6);
+    const arrowX2 = x2 - arrowSize * Math.cos(angle + Math.PI / 6);
+    const arrowY2 = y2 - arrowSize * Math.sin(angle + Math.PI / 6);
+
+    const labelX = (x1 + x2) / 2;
+    const labelY = (y1 + y2) / 2 - 5;
+
+    return `
+    <g class="edge edge-${edge.kind || 'default'}" id="edge-${edge.from}-${edge.to}">
+      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" 
+            stroke="${style.stroke}" stroke-width="2" ${strokeDashArray}/>
+      <polygon points="${x2},${y2} ${arrowX1},${arrowY1} ${arrowX2},${arrowY2}" 
+               fill="${style.stroke}"/>
+      ${edge.label ? `<text x="${labelX}" y="${labelY}" text-anchor="middle" 
+                            font-family="Arial, sans-serif" font-size="10" fill="#666">${edge.label}</text>` : ''}
+    </g>`;
+  };
+
+  const nodes = canvas.nodes.map(renderNode).join('');
+  const edges = canvas.edges.map(renderEdge).join('');
+
+  return `<svg width="${maxX}" height="${maxY}" 
+     xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <style type="text/css">
+      .node { cursor: pointer; }
+      .node:hover rect { stroke-width: 4; }
+      .edge { pointer-events: none; }
+      text { user-select: none; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#fafafa" stroke="#e0e0e0"/>
+  
+  <!-- Edges (behind nodes) -->
+  ${edges}
+  
+  <!-- Nodes (on top) -->
+  ${nodes}
+</svg>`;
 }
 
 // Enhanced HTML viewer with interactive features
@@ -496,27 +630,27 @@ async function startServer(options: ServerOptions): Promise<void> {
     if (url.pathname === "/" || url.pathname.startsWith("/canvas/")) {
       try {
         const canvasFile = file || "demo.canvas.yaml";
-        const canvasPath = join(CANVAS_DIR, canvasFile);
+        // Handle both full paths and just filenames
+        const canvasPath = canvasFile.includes("/") ? canvasFile : join(CANVAS_DIR, canvasFile);
         
         if (!await exists(canvasPath)) {
-          return new Response("Canvas file not found", { status: 404 });
+          return new Response(`Canvas file not found: ${canvasPath}`, { status: 404 });
         }
         
         // Read and render canvas
         const content = await Deno.readTextFile(canvasPath);
-        const canvas = yaml.parse(content) as any;
+        const canvas = yaml.parse(content) as Canvas;
         
-        // Generate SVG (simplified for demo)
-        const svg = `<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
-          <text x="400" y="300" text-anchor="middle">Canvas Preview</text>
-        </svg>`;
+        // Generate SVG from canvas
+        const svg = renderCanvasToSvg(canvas);
         
         const html = generateViewerHtml(canvasFile, svg);
         return new Response(html, {
           headers: { "Content-Type": "text/html" },
         });
       } catch (error) {
-        return new Response(`Error: ${error.message}`, { status: 500 });
+        const err = error as Error;
+        return new Response(`Error: ${err.message}`, { status: 500 });
       }
     }
     
