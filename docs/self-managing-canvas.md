@@ -13,30 +13,11 @@ The canvas displays your application's architecture visually, where each node re
 
 ## Key Features
 
-### Visual Architecture Management
-
-- **Component Nodes**: FSM states, controls, databases, documents, files
-- **Relationship Edges**: Triggers, guards, implementations, tests, documentation
-- **Type-specific Styling**: Each node type has distinct visual appearance
-- **Drill-down Indicators**: Blue icons show which nodes can be explored further
-
-### Interactive Navigation
-
-- **Navigation Stack**: Breadcrumb trail showing current location in architecture
-- **Back Button**: Return to previous canvas level
-- **Sidebar Navigation**: Click any level to jump directly there
-
-### Multi-Modal Editing
-
-- **Canvas View**: Visual drag-and-drop editing of architecture with grid snapping
-- **Interactive Selection**: Click nodes/edges to select, double-click to drill down
-- **Real-time Dragging**: Move nodes with live edge updates and position feedback
-- **File View**: Direct code/config editing in embedded viewer
-- **VS Code Integration**: Open files directly in your editor
-
-### Self-Reference Loop
-
-The architecture canvas contains a node representing itself (`meta-canvas`), creating a self-referential system where the design tool is part of the design it manages.
+- **Interactive Nodes**: FSM states, controls, databases with visual editing
+- **Drill-down Navigation**: Click components to explore implementation
+- **Self-Reference**: Canvas includes node representing itself
+- **VS Code Integration**: Direct file editing in preferred editor
+- **Real-time Updates**: Drag nodes with live edge repositioning
 
 ## Usage Patterns
 
