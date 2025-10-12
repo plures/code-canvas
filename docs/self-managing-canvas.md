@@ -28,7 +28,9 @@ The canvas displays your application's architecture visually, where each node re
 
 ### Multi-Modal Editing
 
-- **Canvas View**: Visual drag-and-drop editing of architecture
+- **Canvas View**: Visual drag-and-drop editing of architecture with grid snapping
+- **Interactive Selection**: Click nodes/edges to select, double-click to drill down
+- **Real-time Dragging**: Move nodes with live edge updates and position feedback
 - **File View**: Direct code/config editing in embedded viewer
 - **VS Code Integration**: Open files directly in your editor
 
@@ -139,20 +141,9 @@ The self-managing canvas integrates with the existing Code Canvas FSM system:
 
 ## Future Enhancements
 
-### Planned Features
-
 - **Real-time Collaboration**: Multiple simultaneous editors
-- **Version Control Integration**: Git branching reflected in canvas navigation
-- **Performance Monitoring**: Live metrics overlaid on architecture
 - **AI Suggestions**: Automatic architectural improvement recommendations
-- **Code Generation**: Generate implementation scaffolding from canvas design
-
-### Advanced Scenarios
-
-- **Multi-Project Canvases**: Manage multiple applications from single interface
-- **Deployment Visualization**: Show running instances and their relationships
-- **Test Coverage Overlay**: Visualize test coverage on architecture components
-- **Dependency Analysis**: Highlight circular dependencies and optimization opportunities
+- **Code Generation**: Generate scaffolding from canvas design
 
 ## Getting Started
 
@@ -161,6 +152,48 @@ The self-managing canvas integrates with the existing Code Canvas FSM system:
 3. **Explore Architecture**: Click around the canvas to understand the system
 4. **Drill Down**: Click blue drill-down icons to explore components
 5. **Make Changes**: Edit nodes and edges to modify architecture
-6. **Save Changes**: Changes persist to canvas files automatically
+6. **Save Changes**: Click Save button to persist changes
+
+## Interactive Features
+
+### Node Selection and Editing
+```bash
+# Click any node to select it
+- Selected nodes show blue outline
+- Selection info appears in right sidebar
+- Shows node type, position, size, and reference
+
+# Drag nodes to move them
+- Click and drag any node to reposition
+- Automatically snaps to 20px grid
+- Connected edges update in real-time
+- Position changes shown in status bar
+```
+
+### Edge Interaction
+```bash
+# Click edges to select them
+- Selected edges show blue highlight
+- Edge info appears in sidebar
+- Hover over edges for visual feedback
+
+# Edge types show different styles:
+- Solid lines: implements relationship
+- Dashed lines: guards, triggers, tests, docs
+```
+
+### Drill-Down Navigation
+```bash
+# Click drill-down icons (blue circles with ↓)
+- Shows component panel with options
+- "View File" opens in embedded viewer
+- "Edit in VS Code" launches external editor
+- "Open Canvas" navigates to sub-canvas
+
+# Double-click nodes for quick drill-down
+- Files open in viewer modal
+- Canvas files navigate to new canvas
+- Navigation breadcrumb shows path
+```
 
 The self-managing canvas represents a new paradigm in software development where the design tool becomes part of the system it manages, creating a truly integrated development experience.

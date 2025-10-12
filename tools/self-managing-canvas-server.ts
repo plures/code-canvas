@@ -503,7 +503,10 @@ function initDragDrop() {
     const svg = document.querySelector('svg');
     if (!svg) return;
     
+    // Click handling for nodes and edges
     svg.addEventListener('click', (e) => {
+        e.preventDefault();
+        
         // Check if clicked on drill-down icon
         if (e.target.classList.contains('drill-down-icon') || e.target.classList.contains('drill-down-text')) {
             const nodeEl = e.target.closest('.node');
@@ -515,12 +518,24 @@ function initDragDrop() {
             return;
         }
         
-        // Regular node selection
+        // Check if clicked on edge
+        const edgeEl = e.target.closest('.edge');
+        if (edgeEl) {
+            const edgeId = edgeEl.id;
+            selectEdge(edgeId);
+            return;
+        }
+        
+        // Check if clicked on node
         const nodeEl = e.target.closest('.node');
         if (nodeEl) {
             const nodeId = nodeEl.id.replace('node-', '');
             selectNode(nodeId);
+            return;
         }
+        
+        // Clicked on empty space - clear selection
+        clearSelection();
     });
     
     // Double-click to drill down
@@ -532,7 +547,337 @@ function initDragDrop() {
         }
     });
     
-    // [Rest of drag & drop code...]
+    // Mouse down for dragging
+    svg.addEventListener('mousedown', (e) => {
+        const nodeEl = e.target.closest('.node');
+        if (nodeEl && !e.target.classList.contains('drill-down-icon') && !e.target.classList.contains('drill-down-text')) {
+            const nodeId = nodeEl.id.replace('node-', '');
+            const node = canvas.nodes.find(n => n.id === nodeId);
+            if (!node) return;
+            
+            isDragging = true;
+            dragNode = node;
+            
+            const svgRect = svg.getBoundingClientRect();
+            const mouseX = (e.clientX - svgRect.left) / currentZoom;
+            const mouseY = (e.clientY - svgRect.top) / currentZoom;
+            
+            dragOffset.x = mouseX - node.x;
+            dragOffset.y = mouseY - node.y;
+            
+            nodeEl.classList.add('dragging');
+            svg.style.cursor = 'grabbing';
+            
+            e.preventDefault();
+        }
+    });
+    
+    // Mouse move for dragging
+    svg.addEventListener('mousemove', (e) => {
+        if (!isDragging || !dragNode) return;
+        
+        const svgRect = svg.getBoundingClientRect();
+        const mouseX = (e.clientX - svgRect.left) / currentZoom;
+        const mouseY = (e.clientY - svgRect.top) / currentZoom;
+        
+        const newX = Math.round((mouseX - dragOffset.x) / 20) * 20; // Snap to grid
+        const newY = Math.round((mouseY - dragOffset.y) / 20) * 20;
+        
+        dragNode.x = Math.max(0, newX);
+        dragNode.y = Math.max(0, newY);
+        
+        updateNodePosition(dragNode);
+        updateEdges();
+        
+        e.preventDefault();
+    });
+    
+    // Mouse up to stop dragging
+    svg.addEventListener('mouseup', (e) => {
+        if (isDragging && dragNode) {
+            const nodeEl = document.getElementById('node-' + dragNode.id);
+            if (nodeEl) {
+                nodeEl.classList.remove('dragging');
+            }
+            
+            showStatus('Node moved • Press Save to persist changes');
+            
+            isDragging = false;
+            dragNode = null;
+            svg.style.cursor = 'default';
+        }
+    });
+    
+    // Mouse leave to stop dragging
+    svg.addEventListener('mouseleave', () => {
+        if (isDragging && dragNode) {
+            const nodeEl = document.getElementById('node-' + dragNode.id);
+            if (nodeEl) {
+                nodeEl.classList.remove('dragging');
+            }
+            
+            isDragging = false;
+            dragNode = null;
+            svg.style.cursor = 'default';
+        }
+    });
+    
+    // Edge hover effects
+    const edges = svg.querySelectorAll('.edge');
+    edges.forEach(edge => {
+        edge.addEventListener('mouseenter', () => {
+            edge.style.opacity = '0.8';
+        });
+        
+        edge.addEventListener('mouseleave', () => {
+            if (!edge.classList.contains('selected')) {
+                edge.style.opacity = '1';
+            }
+        });
+    });
+}
+
+// Node selection functionality
+function selectNode(nodeId) {
+    // Clear previous selections
+    clearSelection();
+    
+    const node = canvas.nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    
+    selectedNode = nodeId;
+    
+    // Visual selection
+    const nodeEl = document.getElementById('node-' + nodeId);
+    if (nodeEl) {
+        const rect = nodeEl.querySelector('rect');
+        if (rect) {
+            rect.style.strokeWidth = '4';
+            rect.style.stroke = '#0066cc';
+        }
+    }
+    
+    // Update selection info in sidebar
+    const selectionInfo = document.getElementById('selection-info');
+    const width = node.w || node.width || 120;
+    const height = node.h || node.height || 60;
+    
+    selectionInfo.innerHTML = \`
+        <div style="margin-bottom: 8px; font-weight: 600;">Node: \${node.label || node.id}</div>
+        <div style="font-size: 12px; color: #888; margin-bottom: 8px;">Type: \${node.type}</div>
+        <div style="font-size: 12px; color: #888; margin-bottom: 8px;">Position: \${node.x}, \${node.y}</div>
+        <div style="font-size: 12px; color: #888; margin-bottom: 8px;">Size: \${width} × \${height}</div>
+        \${node.ref ? \`<div style="font-size: 12px; color: #888;">Ref: \${node.ref}</div>\` : ''}
+    \`;
+    
+    showStatus('Selected node: ' + (node.label || node.id));
+}
+
+// Edge selection functionality
+function selectEdge(edgeId) {
+    // Clear previous selections
+    clearSelection();
+    
+    const edgeEl = document.getElementById(edgeId);
+    if (!edgeEl) return;
+    
+    // Visual selection
+    edgeEl.classList.add('selected');
+    const lines = edgeEl.querySelectorAll('line');
+    lines.forEach(line => {
+        line.style.strokeWidth = '4';
+        line.style.stroke = '#0066cc';
+    });
+    
+    // Update selection info
+    const selectionInfo = document.getElementById('selection-info');
+    selectionInfo.innerHTML = \`
+        <div style="margin-bottom: 8px; font-weight: 600;">Edge Selected</div>
+        <div style="font-size: 12px; color: #888;">ID: \${edgeId}</div>
+    \`;
+    
+    showStatus('Selected edge: ' + edgeId);
+}
+
+// Clear all selections
+function clearSelection() {
+    selectedNode = null;
+    
+    // Clear node selections
+    const nodes = document.querySelectorAll('.node rect');
+    nodes.forEach(rect => {
+        rect.style.strokeWidth = '';
+        rect.style.stroke = '';
+    });
+    
+    // Clear edge selections
+    const edges = document.querySelectorAll('.edge');
+    edges.forEach(edge => {
+        edge.classList.remove('selected');
+        const lines = edge.querySelectorAll('line');
+        lines.forEach(line => {
+            line.style.strokeWidth = '';
+            line.style.stroke = '';
+        });
+    });
+    
+    // Clear selection info
+    const selectionInfo = document.getElementById('selection-info');
+    selectionInfo.innerHTML = 'No selection';
+}
+
+// Update node position in DOM
+function updateNodePosition(node) {
+    const nodeEl = document.getElementById('node-' + node.id);
+    if (!nodeEl) return;
+    
+    const rect = nodeEl.querySelector('rect');
+    const text = nodeEl.querySelector('text');
+    const drillIcon = nodeEl.querySelector('.drill-down-icon');
+    const drillText = nodeEl.querySelector('.drill-down-text');
+    
+    const width = node.w || node.width || 120;
+    const height = node.h || node.height || 60;
+    
+    if (rect) {
+        rect.setAttribute('x', node.x);
+        rect.setAttribute('y', node.y);
+    }
+    
+    if (text) {
+        text.setAttribute('x', node.x + width / 2);
+        text.setAttribute('y', node.y + height / 2);
+    }
+    
+    if (drillIcon) {
+        drillIcon.setAttribute('cx', node.x + width - 15);
+        drillIcon.setAttribute('cy', node.y + 15);
+    }
+    
+    if (drillText) {
+        drillText.setAttribute('x', node.x + width - 15);
+        drillText.setAttribute('y', node.y + 20);
+    }
+    
+    // Update data attributes
+    nodeEl.setAttribute('data-x', node.x);
+    nodeEl.setAttribute('data-y', node.y);
+}
+
+// Update all edges after node movement
+function updateEdges() {
+    canvas.edges.forEach((edge, index) => {
+        const fromId = edge.from || edge.fromNode;
+        const toId = edge.to || edge.toNode;
+        const fromNode = canvas.nodes.find(n => n.id === fromId);
+        const toNode = canvas.nodes.find(n => n.id === toId);
+        
+        if (!fromNode || !toNode) return;
+        
+        const edgeEl = document.getElementById(\`edge-\${index}\`);
+        if (!edgeEl) return;
+        
+        const fromWidth = fromNode.w || fromNode.width || 120;
+        const fromHeight = fromNode.h || fromNode.height || 60;
+        const toWidth = toNode.w || toNode.width || 120;
+        const toHeight = toNode.h || toNode.height || 60;
+        
+        const x1 = fromNode.x + fromWidth / 2;
+        const y1 = fromNode.y + fromHeight / 2;
+        const x2 = toNode.x + toWidth / 2;
+        const y2 = toNode.y + toHeight / 2;
+        
+        const line = edgeEl.querySelector('line');
+        if (line) {
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+        }
+        
+        // Update arrow
+        const arrow = edgeEl.querySelector('polygon');
+        if (arrow) {
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const size = 10;
+            const ax1 = x2 - size * Math.cos(angle - Math.PI / 6);
+            const ay1 = y2 - size * Math.sin(angle - Math.PI / 6);
+            const ax2 = x2 - size * Math.cos(angle + Math.PI / 6);
+            const ay2 = y2 - size * Math.sin(angle + Math.PI / 6);
+            
+            arrow.setAttribute('points', \`\${x2},\${y2} \${ax1},\${ay1} \${ax2},\${ay2}\`);
+        }
+        
+        // Update label position
+        const text = edgeEl.querySelector('text');
+        if (text) {
+            text.setAttribute('x', (x1 + x2) / 2);
+            text.setAttribute('y', (y1 + y2) / 2 - 5);
+        }
+    });
+}
+
+// Save canvas functionality
+async function saveCanvas() {
+    try {
+        const response = await fetch('/api/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                file: currentCanvas,
+                canvas: canvas 
+            })
+        });
+        
+        if (response.ok) {
+            showStatus('Canvas saved successfully!');
+        } else {
+            showStatus('Error saving canvas', 'error');
+        }
+    } catch (error) {
+        showStatus('Error saving canvas: ' + error.message, 'error');
+    }
+}
+
+// Placeholder functions for toolbar buttons
+function addNode() {
+    showStatus('Add Node functionality coming soon...');
+}
+
+function addEdge() {
+    showStatus('Add Edge functionality coming soon...');
+}
+
+function deleteSelected() {
+    if (selectedNode) {
+        showStatus('Delete Node functionality coming soon...');
+    } else {
+        showStatus('No node selected');
+    }
+}
+
+function zoomIn() {
+    currentZoom = Math.min(currentZoom * 1.2, 3);
+    updateZoom();
+}
+
+function zoomOut() {
+    currentZoom = Math.max(currentZoom / 1.2, 0.3);
+    updateZoom();
+}
+
+function updateZoom() {
+    const svg = document.querySelector('svg');
+    if (svg) {
+        svg.style.transform = \`scale(\${currentZoom})\`;
+        svg.style.transformOrigin = '0 0';
+    }
+    showStatus(\`Zoom: \${Math.round(currentZoom * 100)}%\`);
+}
+
+function fitToScreen() {
+    currentZoom = 1;
+    updateZoom();
 }
 
 // Status and utility functions
@@ -655,6 +1000,21 @@ async function startServer(options: ServerOptions): Promise<void> {
         return new Response('OK');
       } catch (error) {
         return new Response(`Error opening file: ${error.message}`, { status: 500 });
+      }
+    }
+    
+    if (path === '/api/save' && req.method === 'POST') {
+      const body = await req.json();
+      const canvasFile = body.file;
+      const canvasData = body.canvas;
+      
+      try {
+        const canvasPath = join(CANVAS_DIR, canvasFile);
+        const yamlContent = yaml.stringify(canvasData);
+        await Deno.writeTextFile(canvasPath, yamlContent);
+        return new Response('OK');
+      } catch (error) {
+        return new Response(`Error saving canvas: ${error.message}`, { status: 500 });
       }
     }
     
