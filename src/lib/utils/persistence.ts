@@ -4,12 +4,23 @@ import type { CanvasNode, CanvasEdge } from '../types/canvas.js';
 const STORAGE_KEY = 'fsm-canvas-data';
 const PROJECT_LIST_KEY = 'fsm-canvas-projects';
 
+export interface ProjectExtras {
+  template?: string;
+  description?: string;
+  fileStructure?: any[];
+  dependencies?: string[];
+  devDependencies?: string[];
+  scripts?: Record<string, string>;
+}
+
 export interface SavedCanvas {
   id: string;
   name: string;
   timestamp: number;
   nodes: CanvasNode[];
   edges: CanvasEdge[];
+  description?: string;
+  extras?: ProjectExtras;
 }
 
 export interface ProjectMetadata {
@@ -18,6 +29,8 @@ export interface ProjectMetadata {
   timestamp: number;
   nodeCount: number;
   edgeCount: number;
+  description?: string;
+  template?: string;
 }
 
 /**
@@ -26,7 +39,8 @@ export interface ProjectMetadata {
 export function saveCanvas(
   nodes: CanvasNode[], 
   edges: CanvasEdge[], 
-  name: string = 'Untitled Canvas'
+  name: string = 'Untitled Canvas',
+  extras?: ProjectExtras
 ): string {
   const canvasId = `canvas-${Date.now()}`;
   const canvasData: SavedCanvas = {
@@ -34,7 +48,9 @@ export function saveCanvas(
     name,
     timestamp: Date.now(),
     nodes: structuredClone(nodes),
-    edges: structuredClone(edges)
+    edges: structuredClone(edges),
+    description: extras?.description,
+    extras
   };
 
   // Save the canvas
@@ -47,7 +63,9 @@ export function saveCanvas(
     name,
     timestamp: canvasData.timestamp,
     nodeCount: nodes.length,
-    edgeCount: edges.length
+    edgeCount: edges.length,
+    description: extras?.description,
+    template: extras?.template
   };
   
   projectList.push(projectMetadata);

@@ -28,7 +28,6 @@
           <button on:click={() => showPanel('propertiesPanel')}>Properties</button>
           <button on:click={() => showPanel('developmentPanel')}>Development</button>
           <button on:click={() => showPanel('projectManager')}>Project Manager</button>
-          <button on:click={() => showPanel('todoArchitecture')}>Todo App Designer</button>
           <button on:click={() => showPanel('modelDrivenInfo')}>Model Info</button>
           <button on:click={() => showPanel('fsmExecutionPanel')}>FSM Execution</button>
           <button on:click={() => showPanel('fsmValidationPanel')}>FSM Validation</button>

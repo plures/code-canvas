@@ -26,7 +26,6 @@
     'propertiesPanel': PropertiesPanel,
     'projectManager': ProjectManager,
     'modelDrivenInfo': ModelDrivenInfo,
-    'todoArchitecture': TodoAppArchitecture,
     'fsmExecutionPanel': FSMExecutionPanel,
     'fsmValidationPanel': FSMValidationPanel
   };
@@ -38,14 +37,12 @@
     windowManagerStore.initializePanel('developmentPanel', '🚀 Development Panel');  
     windowManagerStore.initializePanel('propertiesPanel', '⚙️ Properties Panel');
     windowManagerStore.initializePanel('modelDrivenInfo', '🏗️ Model-Driven Info');
-    windowManagerStore.initializePanel('todoArchitecture', '🎯 Todo App Designer');
 
     // Set initial positions for better layout
     windowManagerStore.movePanel('applicationToolbar', { x: 50, y: 50 });
     windowManagerStore.movePanel('developmentPanel', { x: 400, y: 50 });
     windowManagerStore.movePanel('propertiesPanel', { x: 850, y: 50 });
     windowManagerStore.movePanel('modelDrivenInfo', { x: 100, y: 500 });
-    windowManagerStore.movePanel('todoArchitecture', { x: 1200, y: 50 });
 
     // Start with completely clean UX - no panels shown by default
     // All panels are available but hidden by default for the cleanest possible experience

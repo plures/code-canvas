@@ -140,6 +140,14 @@ function createCanvasStore() {
       return false;
     },
 
+    clear: () => update(state => ({
+      ...state,
+      nodes: [],
+      edges: [],
+      selectedNode: undefined,
+      selectedEdge: undefined
+    })),
+
     reset: () => set(initialState)
   };
 }

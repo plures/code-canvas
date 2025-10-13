@@ -10,6 +10,7 @@
     importCanvas,
     type ProjectMetadata 
   } from '../utils/persistence.js';
+  import { PROJECT_TEMPLATES, type ProjectTemplate } from '../templates/projectTemplates.js';
 
   const dispatch = createEventDispatcher();
   
@@ -18,6 +19,12 @@
   let projects: ProjectMetadata[] = [];
   let showImportModal = false;
   let importText = '';
+  
+  // Project creation state
+  let showCreateProject = false;
+  let selectedTemplate: ProjectTemplate | null = null;
+  let newProjectName = '';
+  let projectDescription = '';
   
   // Get current canvas state
   let currentNodes: any[] = [];
@@ -93,6 +100,66 @@
     }
   }
 
+  // Project Creation Functions
+  function openCreateProject() {
+    showCreateProject = true;
+    newProjectName = '';
+    projectDescription = '';
+    selectedTemplate = null;
+  }
+
+  function selectTemplate(template: ProjectTemplate) {
+    selectedTemplate = template;
+  }
+
+  function createProject() {
+    if (!selectedTemplate || !newProjectName.trim()) {
+      alert('Please select a template and enter a project name');
+      return;
+    }
+
+    // Clear current canvas
+    canvasStore.clear();
+    
+    // Load template nodes and edges
+    canvasStore.loadCanvas({
+      nodes: selectedTemplate.initialNodes,
+      edges: selectedTemplate.initialEdges,
+      name: newProjectName.trim(),
+      description: projectDescription.trim()
+    });
+
+    // Save the new project
+    const canvasId = saveCanvas(
+      selectedTemplate.initialNodes, 
+      selectedTemplate.initialEdges, 
+      newProjectName.trim(),
+      {
+        template: selectedTemplate.id,
+        description: projectDescription.trim(),
+        fileStructure: selectedTemplate.fileStructure,
+        dependencies: selectedTemplate.dependencies,
+        devDependencies: selectedTemplate.devDependencies,
+        scripts: selectedTemplate.scripts
+      }
+    );
+
+    projectName = newProjectName.trim();
+    dispatch('created', { 
+      canvasId, 
+      name: projectName, 
+      template: selectedTemplate.id 
+    });
+    
+    showCreateProject = false;
+    closeModal();
+  }
+
+  function cancelCreateProject() {
+    showCreateProject = false;
+    selectedTemplate = null;
+  }
+
   function formatDate(timestamp: number): string {
     return new Date(timestamp).toLocaleString();
   }
@@ -119,7 +186,57 @@
       </div>
       
       <div class="modal-content">
-        {#if !showImportModal}
+        {#if showCreateProject}
+          <!-- Create New Project -->
+          <div class="create-project-modal">
+            <h4>🚀 Create New Project</h4>
+            
+            <div class="project-form">
+              <input
+                bind:value={newProjectName}
+                placeholder="Project name..."
+                class="project-input"
+              />
+              <textarea
+                bind:value={projectDescription}
+                placeholder="Project description (optional)..."
+                class="project-description"
+                rows="2"
+              ></textarea>
+            </div>
+
+            <div class="templates-grid">
+              <h5>Choose a template:</h5>
+              {#each PROJECT_TEMPLATES as template}
+                <div 
+                  class="template-card {selectedTemplate?.id === template.id ? 'selected' : ''}"
+                  on:click={() => selectTemplate(template)}
+                >
+                  <div class="template-icon">{template.icon}</div>
+                  <div class="template-info">
+                    <h6>{template.name}</h6>
+                    <p>{template.description}</p>
+                    <span class="template-category">{template.category}</span>
+                  </div>
+                </div>
+              {/each}
+            </div>
+
+            <div class="create-actions">
+              <button on:click={cancelCreateProject} class="btn secondary">Cancel</button>
+              <button on:click={createProject} class="btn primary" disabled={!selectedTemplate || !newProjectName.trim()}>
+                Create Project
+              </button>
+            </div>
+          </div>
+        {:else if !showImportModal}
+          <!-- Main Project Manager -->
+          <div class="project-actions">
+            <button on:click={openCreateProject} class="btn primary create-new">
+              🚀 Create New Project
+            </button>
+          </div>
+
           <!-- Save Section -->
           <div class="section">
             <h4>💾 Save Current Canvas</h4>
@@ -381,5 +498,107 @@
     display: flex;
     gap: 0.5rem;
     justify-content: flex-end;
+  }
+
+  /* Project Creation Styles */
+  .create-project-modal {
+    padding: 1rem 0;
+  }
+
+  .project-form {
+    margin-bottom: 1.5rem;
+  }
+
+  .project-description {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    resize: vertical;
+    margin-top: 0.5rem;
+  }
+
+  .templates-grid {
+    margin-bottom: 1.5rem;
+  }
+
+  .templates-grid h5 {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 0.95rem;
+  }
+
+  .template-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+  }
+
+  .template-card:hover {
+    border-color: #667eea;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .template-card.selected {
+    border-color: #667eea;
+    background: #f8f9ff;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  }
+
+  .template-icon {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .template-info {
+    flex: 1;
+  }
+
+  .template-info h6 {
+    margin: 0 0 0.25rem 0;
+    color: #333;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .template-info p {
+    margin: 0 0 0.5rem 0;
+    color: #666;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .template-category {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: #f0f0f0;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .create-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+  }
+
+  .create-new {
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
   }
 </style>
