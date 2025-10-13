@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { RobotMachine, StatePosition, TransitionPath } from '../types/fsm.js';
   import { fsmStore, currentFsmState, fsmConfig } from '../stores/fsmStore.js';
+  import FSMExecutionPanel from './FSMExecutionPanel.svelte';
 
   export let machine: RobotMachine | undefined = undefined;
 
@@ -83,20 +84,8 @@
   }
 
   function handleStateClick(stateId: string) {
-    // Trigger FSM transition
-    fsmStore.step();
-  }
-
-  function handleStart() {
-    fsmStore.start();
-  }
-
-  function handleStop() {
-    fsmStore.stop();
-  }
-
-  function handleReset() {
-    fsmStore.reset();
+    // Trigger FSM transition or show state details
+    console.log(`Clicked state: ${stateId}`);
   }
 
   onMount(() => {
@@ -107,18 +96,9 @@
 </script>
 
 <div class="fsm-visualizer">
-  <!-- FSM Controls -->
-  <div class="fsm-controls">
-    <button on:click={handleStart} class="btn btn-primary">▶️ Start</button>
-    <button on:click={handleStop} class="btn btn-secondary">⏸️ Stop</button>
-    <button on:click={handleReset} class="btn btn-secondary">⏮️ Reset</button>
-    <div class="current-state">
-      Current: <strong>{$currentFsmState || 'None'}</strong>
-    </div>
-  </div>
-
   <!-- FSM Visualization -->
-  <svg width={svgWidth} height={svgHeight} class="fsm-svg">
+  <div class="fsm-diagram">
+    <svg width={svgWidth} height={svgHeight} class="fsm-svg">
     <defs>
       <marker
         id="fsm-arrowhead"
@@ -211,14 +191,21 @@
         {/if}
       </g>
     {/each}
-  </svg>
+    </svg>
+  </div>
+
+  <!-- FSM Execution Panel -->
+  <div class="fsm-controls">
+    <FSMExecutionPanel />
+  </div>
 </div>
 
 <style>
   .fsm-visualizer {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: row;
+    gap: 1rem;
+    align-items: flex-start;
     padding: 1rem;
     background: white;
     border: 1px solid #ddd;
@@ -266,6 +253,14 @@
   .current-state {
     font-size: 14px;
     color: #333;
+  }
+
+  .fsm-diagram {
+    flex: 1;
+  }
+
+  .fsm-controls {
+    flex-shrink: 0;
   }
 
   .fsm-svg {

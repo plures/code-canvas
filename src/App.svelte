@@ -12,6 +12,21 @@
     // Try to load auto-saved canvas first
     const hasAutoSavedData = canvasStore.loadAutoSavedCanvas();
     
+    // Load a sample FSM for testing execution
+    fsmStore.loadFsm({
+      initial: 'idle',
+      states: [
+        { id: 'idle', label: 'Idle State' },
+        { id: 'working', label: 'Working State' },
+        { id: 'complete', label: 'Complete State' }
+      ],
+      transitions: [
+        { from: 'idle', to: 'working', guard: '', event: 'start' },
+        { from: 'working', to: 'complete', guard: '', event: 'finish' },
+        { from: 'complete', to: 'idle', guard: '', event: 'reset' }
+      ]
+    });
+    
     if (!hasAutoSavedData) {
       // Create sample data if no auto-saved data exists
       canvasStore.addNode({
