@@ -71,7 +71,7 @@ nodes:
     ref: "sot/lifecycle.yaml"
     props:
       description: "FSM state definitions"
-      drillDown: "canvas"
+      drillDown: "file"
       
   - id: rules-config
     type: database
