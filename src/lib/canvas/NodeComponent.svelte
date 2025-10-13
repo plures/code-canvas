@@ -4,6 +4,7 @@
 
   export let node: CanvasNode;
   export let mode: 'canvas' | 'fsm' = 'canvas';
+  export let isSelected: boolean = false;
 
   const dispatch = createEventDispatcher();
   
@@ -17,7 +18,8 @@
       node,
       clientX: event.clientX,
       clientY: event.clientY,
-      isShiftPressed: event.shiftKey
+      isShiftPressed: event.shiftKey,
+      isCtrlPressed: event.ctrlKey
     });
   }
 
@@ -92,6 +94,7 @@
   class="node"
   class:state-node={isState}
   class:initial-state={node.props?.isInitial}
+  class:selected={isSelected}
   transform="translate({node.x}, {node.y})"
   on:mousedown={handleMouseDown}
   on:click={handleClick}
@@ -270,5 +273,12 @@
   .drill-down-text {
     pointer-events: none;
     user-select: none;
+  }
+
+  /* Selection styling */
+  .node.selected .node-rect {
+    stroke: #3b82f6;
+    stroke-width: 3;
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
   }
 </style>

@@ -1,8 +1,13 @@
 <script lang="ts">
   import type { CanvasEdge, CanvasNode } from '../types/canvas.js';
 
+  import { createEventDispatcher } from 'svelte';
+  
   export let edge: CanvasEdge;
   export let nodes: CanvasNode[];
+  export let isSelected: boolean = false;
+
+  const dispatch = createEventDispatcher();
 
   $: fromNode = nodes.find(n => n.id === edge.from || n.id === edge.fromNode);
   $: toNode = nodes.find(n => n.id === edge.to || n.id === edge.toNode);
@@ -71,10 +76,18 @@
   }
 
   $: labelPos = getLabelPosition(fromNode, toNode);
+
+  function handleClick(event: MouseEvent) {
+    event.stopPropagation();
+    dispatch('click', {
+      edge,
+      isCtrlPressed: event.ctrlKey
+    });
+  }
 </script>
 
 {#if fromNode && toNode}
-  <g class="edge" class:guard-edge={edge.kind === 'guards'}>
+  <g class="edge" class:guard-edge={edge.kind === 'guards'} class:selected={isSelected}>
     <!-- Edge path -->
     <path
       d={path}
@@ -83,7 +96,10 @@
       stroke-width={edgeStyle.strokeWidth}
       stroke-dasharray={edgeStyle.strokeDasharray}
       marker-end="url(#arrowhead)"
-      class="edge-path"
+      class="edge-path clickable"
+      on:click={handleClick}
+      role="button"
+      tabindex="0"
     />
 
     <!-- Edge label -->
@@ -144,6 +160,17 @@
   .label-text {
     pointer-events: none;
     user-select: none;
+  }
+
+  /* Selection styling */
+  .edge.selected .edge-path {
+    stroke: #3b82f6;
+    stroke-width: 4;
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+  }
+
+  .clickable {
+    cursor: pointer;
   }
 
   /* Animation for new edges */
