@@ -5,12 +5,14 @@
   import FSMExecutionPanel from './FSMExecutionPanel.svelte';
   import StateEditModal from './StateEditModal.svelte';
   import TransitionEditModal from './TransitionEditModal.svelte';
+  import FSMValidationPanel from './FSMValidationPanel.svelte';
 
   export let machine: RobotMachine | undefined = undefined;
 
   // Modal state
   let stateEditModal = { isOpen: false, state: null as FsmState | null, isNew: false };
   let transitionEditModal = { isOpen: false, transition: null as FsmTransition | null, isNew: false };
+  let validationPanelOpen = false;
 
   // Edit mode
   let editMode = false;
@@ -209,6 +211,13 @@
           ➕ Add State
         </button>
       {/if}
+      <button 
+        class="btn btn-sm btn-secondary"
+        on:click={() => validationPanelOpen = !validationPanelOpen}
+        class:active={validationPanelOpen}
+      >
+        🔍 Validate
+      </button>
     </div>
 
     <svg 
@@ -346,6 +355,12 @@
   on:delete={handleTransitionDelete}
 />
 
+<!-- FSM Validation Panel -->
+<FSMValidationPanel
+  bind:isOpen={validationPanelOpen}
+  fsmConfig={$fsmConfig}
+/>
+
 <style>
   .fsm-visualizer {
     display: flex;
@@ -439,6 +454,11 @@
 
   .btn-secondary:hover {
     background: #555;
+  }
+
+  .btn-secondary.active {
+    background: #2563eb;
+    color: white;
   }
 
   .current-state {
