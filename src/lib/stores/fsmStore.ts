@@ -58,25 +58,62 @@ function createFsmStore() {
         // Simple interpreter that we can control
         const interpreter = {
           machine,
-          send: (eventType: string) => {
+          send: (eventType: string, eventData?: any) => {
             const currentState = machine.current;
             const transition = fsmConfig.transitions.find(
               t => t.from === currentState && (t.event || 'advance') === eventType
             );
             
             if (transition) {
+              // Check guard condition if present
+              if (transition.guard && transition.guard.trim()) {
+                try {
+                  // Create evaluation context
+                  const context = fsmConfig.context || {};
+                  const event = { type: eventType, data: eventData };
+                  
+                  // Evaluate guard condition
+                  const guardFunction = new Function('context', 'event', `return ${transition.guard}`);
+                  const guardResult = guardFunction(context, event);
+                  
+                  if (!guardResult) {
+                    return { success: false, newState: currentState, reason: 'guard_failed' };
+                  }
+                } catch (error) {
+                  console.error('Guard condition evaluation error:', error);
+                  return { success: false, newState: currentState, reason: 'guard_error' };
+                }
+              }
+              
               machine.current = transition.to;
               return { success: true, newState: transition.to };
             }
-            return { success: false, newState: currentState };
+            return { success: false, newState: currentState, reason: 'no_transition' };
           }
         };
 
-        // Get available events for current state
+        // Get available events for current state (considering guard conditions)
         const getAvailableEvents = () => {
           const currentStateId = machine.current;
           return fsmConfig.transitions
-            .filter(t => t.from === currentStateId)
+            .filter(t => {
+              if (t.from !== currentStateId) return false;
+              
+              // If there's a guard condition, check if it would pass
+              if (t.guard && t.guard.trim()) {
+                try {
+                  const context = fsmConfig.context || {};
+                  const event = { type: t.event || 'advance', data: null };
+                  const guardFunction = new Function('context', 'event', `return ${t.guard}`);
+                  return guardFunction(context, event);
+                } catch (error) {
+                  // If guard evaluation fails, consider the event unavailable
+                  return false;
+                }
+              }
+              
+              return true;
+            })
             .map(t => t.event || 'advance');
         };
 
@@ -243,6 +280,57 @@ function createFsmStore() {
       return {
         ...store,
         fsmConfig: updatedConfig
+      };
+    }),
+
+    // Additional editing methods
+    updateState: (updatedState: FsmState) => update(store => {
+      if (!store.fsmConfig) return store;
+      
+      const updatedConfig = {
+        ...store.fsmConfig,
+        states: store.fsmConfig.states.map(s => 
+          s.id === updatedState.id ? updatedState : s
+        )
+      };
+
+      return {
+        ...store,
+        fsmConfig: updatedConfig
+      };
+    }),
+
+    updateTransition: (updatedTransition: FsmTransition) => update(store => {
+      if (!store.fsmConfig) return store;
+      
+      const updatedConfig = {
+        ...store.fsmConfig,
+        transitions: store.fsmConfig.transitions.map(t => 
+          t.from === updatedTransition.from && t.to === updatedTransition.to 
+            ? updatedTransition 
+            : t
+        )
+      };
+
+      return {
+        ...store,
+        fsmConfig: updatedConfig
+      };
+    }),
+
+    setInitialState: (stateId: string) => update(store => {
+      if (!store.fsmConfig) return store;
+      
+      const updatedConfig = {
+        ...store.fsmConfig,
+        initial: stateId
+      };
+
+      return {
+        ...store,
+        fsmConfig: updatedConfig,
+        currentState: stateId,
+        history: [stateId]
       };
     }),
 

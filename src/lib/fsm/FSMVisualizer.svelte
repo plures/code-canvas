@@ -1,10 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { RobotMachine, StatePosition, TransitionPath } from '../types/fsm.js';
+  import type { RobotMachine, StatePosition, TransitionPath, FsmState, FsmTransition } from '../types/fsm.js';
   import { fsmStore, currentFsmState, fsmConfig } from '../stores/fsmStore.js';
   import FSMExecutionPanel from './FSMExecutionPanel.svelte';
+  import StateEditModal from './StateEditModal.svelte';
+  import TransitionEditModal from './TransitionEditModal.svelte';
 
   export let machine: RobotMachine | undefined = undefined;
+
+  // Modal state
+  let stateEditModal = { isOpen: false, state: null as FsmState | null, isNew: false };
+  let transitionEditModal = { isOpen: false, transition: null as FsmTransition | null, isNew: false };
+
+  // Edit mode
+  let editMode = false;
 
   let positions: StatePosition[] = [];
   let transitions: TransitionPath[] = [];
@@ -84,8 +93,91 @@
   }
 
   function handleStateClick(stateId: string) {
-    // Trigger FSM transition or show state details
-    console.log(`Clicked state: ${stateId}`);
+    if (editMode) {
+      // Open state editing modal
+      const state = $fsmConfig?.states.find(s => s.id === stateId);
+      if (state) {
+        stateEditModal = {
+          isOpen: true,
+          state,
+          isNew: false
+        };
+      }
+    } else {
+      // In execution mode - could trigger state selection or show info
+      console.log(`Clicked state: ${stateId}`);
+    }
+  }
+
+  function handleTransitionClick(transition: TransitionPath) {
+    if (editMode) {
+      // Open transition editing modal
+      const fsmTransition = $fsmConfig?.transitions.find(
+        t => t.from === transition.from && t.to === transition.to
+      );
+      if (fsmTransition) {
+        transitionEditModal = {
+          isOpen: true,
+          transition: fsmTransition,
+          isNew: false
+        };
+      }
+    }
+  }
+
+  function handleCanvasDoubleClick(event: MouseEvent) {
+    if (!editMode || !$fsmConfig) return;
+    
+    // Get click position relative to SVG
+    const svg = event.currentTarget as SVGSVGElement;
+    const rect = svg.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // Create new state at click position
+    // For now, we'll open the state creation modal
+    stateEditModal = {
+      isOpen: true,
+      state: null,
+      isNew: true
+    };
+  }
+
+  // Modal event handlers
+  function handleStateSave(event: CustomEvent) {
+    const { state, makeInitial, isNew } = event.detail;
+    
+    if (isNew) {
+      fsmStore.addState(state);
+    } else {
+      // Update existing state
+      fsmStore.updateState(state);
+    }
+    
+    if (makeInitial) {
+      fsmStore.setInitialState(state.id);
+    }
+  }
+
+  function handleStateDelete(event: CustomEvent) {
+    const { stateId } = event.detail;
+    fsmStore.removeState(stateId);
+  }
+
+  function handleTransitionSave(event: CustomEvent) {
+    const { transition, isNew } = event.detail;
+    
+    if (isNew) {
+      fsmStore.addTransition(transition);
+    } else {
+      // Update existing transition
+      fsmStore.updateTransition(transition);
+    }
+  }
+
+  function handleTransitionDelete(event: CustomEvent) {
+    const { from, to } = event.detail;
+    fsmStore.removeTransition(from, to);
   }
 
   onMount(() => {
@@ -98,7 +190,33 @@
 <div class="fsm-visualizer">
   <!-- FSM Visualization -->
   <div class="fsm-diagram">
-    <svg width={svgWidth} height={svgHeight} class="fsm-svg">
+    <!-- Edit mode toolbar -->
+    <div class="fsm-toolbar">
+      <label class="edit-mode-toggle">
+        <input
+          type="checkbox"
+          bind:checked={editMode}
+        />
+        <span class="toggle-label">
+          {editMode ? '✏️ Edit Mode' : '▶️ View Mode'}
+        </span>
+      </label>
+      {#if editMode}
+        <button 
+          class="btn btn-sm btn-primary"
+          on:click={() => stateEditModal = { isOpen: true, state: null, isNew: true }}
+        >
+          ➕ Add State
+        </button>
+      {/if}
+    </div>
+
+    <svg 
+      width={svgWidth} 
+      height={svgHeight} 
+      class="fsm-svg"
+      on:dblclick={handleCanvasDoubleClick}
+    >
     <defs>
       <marker
         id="fsm-arrowhead"
@@ -114,7 +232,7 @@
 
     <!-- Render transitions -->
     {#each transitions as transition}
-      <g class="transition">
+      <g class="transition" class:clickable={editMode}>
         <path
           d={transition.path}
           fill="none"
@@ -122,6 +240,10 @@
           stroke-width="2"
           marker-end="url(#fsm-arrowhead)"
           class="transition-path"
+          role={editMode ? 'button' : undefined}
+          tabindex={editMode ? 0 : undefined}
+          on:click={editMode ? () => handleTransitionClick(transition) : undefined}
+          on:keydown={editMode ? (e) => e.key === 'Enter' && handleTransitionClick(transition) : undefined}
         />
         <!-- Transition label -->
         {#if transition.label}
@@ -132,6 +254,10 @@
             font-size="10"
             fill="#666"
             class="transition-label"
+            role={editMode ? 'button' : undefined}
+            tabindex={editMode ? 0 : undefined}
+            on:click={editMode ? () => handleTransitionClick(transition) : undefined}
+            on:keydown={editMode ? (e) => e.key === 'Enter' && handleTransitionClick(transition) : undefined}
           >
             {transition.label}
           </text>
@@ -200,6 +326,26 @@
   </div>
 </div>
 
+<!-- State Edit Modal -->
+<StateEditModal
+  bind:isOpen={stateEditModal.isOpen}
+  state={stateEditModal.state}
+  isNewState={stateEditModal.isNew}
+  isInitialState={stateEditModal.state?.id === $fsmConfig?.initial}
+  on:save={handleStateSave}
+  on:delete={handleStateDelete}
+/>
+
+<!-- Transition Edit Modal -->
+<TransitionEditModal
+  bind:isOpen={transitionEditModal.isOpen}
+  transition={transitionEditModal.transition}
+  isNewTransition={transitionEditModal.isNew}
+  availableStates={$fsmConfig?.states.map(s => s.id) || []}
+  on:save={handleTransitionSave}
+  on:delete={handleTransitionDelete}
+/>
+
 <style>
   .fsm-visualizer {
     display: flex;
@@ -213,23 +359,68 @@
     margin: 1rem 0;
   }
 
-  .fsm-controls {
+  .fsm-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+  }
+
+  .edit-mode-toggle {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
-    background: #f5f5f5;
-    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .edit-mode-toggle input[type="checkbox"] {
+    margin: 0;
+  }
+
+  .toggle-label {
+    user-select: none;
+  }
+
+  .fsm-controls {
+    flex-shrink: 0;
   }
 
   .btn {
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem 0.75rem;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .btn-sm {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .btn-primary {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #2563eb;
   }
 
   .btn-primary {
@@ -299,6 +490,24 @@
   }
 
   .transition:hover .transition-path {
+    stroke-width: 3;
+  }
+
+  .transition.clickable {
+    cursor: pointer;
+  }
+
+  .transition.clickable .transition-path {
+    pointer-events: stroke;
+  }
+
+  .transition.clickable .transition-label {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .transition.clickable:hover .transition-path {
+    stroke: #2563eb;
     stroke-width: 3;
   }
 

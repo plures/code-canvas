@@ -12,18 +12,23 @@
     // Try to load auto-saved canvas first
     const hasAutoSavedData = canvasStore.loadAutoSavedCanvas();
     
-    // Load a sample FSM for testing execution
+    // Load a sample FSM for testing execution and editing
     fsmStore.loadFsm({
       initial: 'idle',
+      context: { count: 0, maxAttempts: 3 },
       states: [
         { id: 'idle', label: 'Idle State' },
         { id: 'working', label: 'Working State' },
-        { id: 'complete', label: 'Complete State' }
+        { id: 'complete', label: 'Complete State' },
+        { id: 'error', label: 'Error State' }
       ],
       transitions: [
         { from: 'idle', to: 'working', guard: '', event: 'start' },
-        { from: 'working', to: 'complete', guard: '', event: 'finish' },
-        { from: 'complete', to: 'idle', guard: '', event: 'reset' }
+        { from: 'working', to: 'complete', guard: 'context.count < 10', event: 'finish' },
+        { from: 'working', to: 'error', guard: 'context.count >= 10', event: 'finish' },
+        { from: 'complete', to: 'idle', guard: '', event: 'reset' },
+        { from: 'error', to: 'idle', guard: '', event: 'reset' },
+        { from: 'working', to: 'idle', guard: '', event: 'cancel' }
       ]
     });
     
