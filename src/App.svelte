@@ -354,11 +354,40 @@
 </main>
 
 <style>
+  :global(:root[data-theme="light"]) {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --accent-color: #3b82f6;
+    --accent-hover: #2563eb;
+    --shadow: rgba(0, 0, 0, 0.1);
+    --gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  }
+
+  :global(:root[data-theme="dark"]) {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: #475569;
+    --accent-color: #60a5fa;
+    --accent-hover: #3b82f6;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  }
+
   main {
-    padding: 1rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    font-family: system-ui, -apple-system, sans-serif;
+    padding: 2rem;
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    background: var(--gradient);
+    min-height: 100vh;
+    color: var(--text-primary);
   }
 
     .mode-controls {
@@ -369,7 +398,7 @@
   }
 
   .mode-toggle {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--accent-color);
     color: white;
     border: none;
     padding: 10px 16px;
@@ -377,13 +406,14 @@
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px var(--shadow);
     transition: all 0.2s ease;
   }
 
   .mode-toggle:hover {
+    background: var(--accent-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px var(--shadow);
   }
 
   .canvas-container {

@@ -7,6 +7,7 @@
   import { fsmStore } from '../stores/fsmStore.js';
   import { projectTemplates } from '../templates/projectTemplates.js';
   import type { ProjectTemplate } from '../templates/projectTemplates.js';
+  import { themePreference, currentTheme, initializeTheme } from '../stores/themeStore.js';
 
   let menuOpen = false;
   let activeSubmenu: string | null = null;
@@ -190,8 +191,16 @@
     closeMenu();
   }
 
+  // Theme actions
+  function setTheme(theme: 'light' | 'dark' | 'system') {
+    themePreference.set(theme);
+    closeMenu();
+  }
+
   // Close menu on outside click
   onMount(() => {
+    initializeTheme();
+    
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target.closest('.main-menu')) {
@@ -277,10 +286,30 @@
         </div>
         {#if activeSubmenu === 'view'}
           <div class="submenu">
-            <button on:click={() => showPanel('propertiesPanel')}>⚙️ Properties Panel</button>
-            <button on:click={() => showPanel('modelDrivenInfo')}>🏗️ Model Info</button>
-            <button on:click={() => showPanel('fsmExecutionPanel')}>🔄 FSM Execution</button>
-            <button on:click={() => showPanel('fsmValidationPanel')}>✅ FSM Validation</button>
+            <!-- Theme Controls -->
+            <div class="submenu-group">
+              <div class="submenu-label">Theme ({$currentTheme}):</div>
+              <button on:click={() => setTheme('light')} class:selected={$themePreference === 'light'}>
+                ☀️ Light Theme
+              </button>
+              <button on:click={() => setTheme('dark')} class:selected={$themePreference === 'dark'}>
+                🌙 Dark Theme  
+              </button>
+              <button on:click={() => setTheme('system')} class:selected={$themePreference === 'system'}>
+                🖥️ System Theme
+              </button>
+            </div>
+            
+            <hr>
+            
+            <!-- Panels -->
+            <div class="submenu-group">
+              <div class="submenu-label">Panels:</div>
+              <button on:click={() => showPanel('propertiesPanel')}>⚙️ Properties Panel</button>
+              <button on:click={() => showPanel('modelDrivenInfo')}>🏗️ Model Info</button>
+              <button on:click={() => showPanel('fsmExecutionPanel')}>🔄 FSM Execution</button>
+              <button on:click={() => showPanel('fsmValidationPanel')}>✅ FSM Validation</button>
+            </div>
           </div>
         {/if}
       </div>
@@ -355,7 +384,7 @@
   }
 
   .menu-button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--accent-color);
     color: white;
     border: none;
     padding: 12px 20px;
@@ -363,14 +392,15 @@
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px var(--shadow);
     transition: all 0.2s ease;
   }
 
   .menu-button:hover,
   .menu-button.active {
+    background: var(--accent-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px var(--shadow);
   }
 
   .menu-dropdown {
@@ -379,10 +409,10 @@
     left: 0;
     margin-top: 8px;
     min-width: 280px;
-    background: white;
+    background: var(--bg-primary);
     border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 32px var(--shadow);
+    border: 1px solid var(--border-color);
     overflow: hidden;
     animation: menuSlideDown 0.2s ease;
   }
@@ -399,7 +429,7 @@
   }
 
   .menu-section {
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-color);
   }
 
   .menu-section:last-child {
@@ -409,19 +439,20 @@
   .section-header {
     padding: 12px 16px;
     font-weight: 500;
-    background: #f8fafc;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     cursor: pointer;
     user-select: none;
     transition: background 0.15s ease;
   }
 
   .section-header:hover {
-    background: #f1f5f9;
+    background: var(--bg-tertiary);
   }
 
   .submenu {
     padding: 8px 0;
-    background: white;
+    background: var(--bg-primary);
   }
 
   .submenu button {
@@ -430,6 +461,7 @@
     padding: 8px 20px;
     border: none;
     background: none;
+    color: var(--text-primary);
     text-align: left;
     cursor: pointer;
     font-size: 14px;
@@ -437,7 +469,7 @@
   }
 
   .submenu button:hover:not(:disabled) {
-    background: #f1f5f9;
+    background: var(--bg-tertiary);
   }
 
   .submenu button:disabled {
@@ -445,10 +477,19 @@
     cursor: not-allowed;
   }
 
+  .submenu button.selected {
+    background: var(--accent-color);
+    color: white;
+  }
+
+  .submenu button.selected:hover {
+    background: var(--accent-hover);
+  }
+
   .submenu hr {
     margin: 8px 16px;
     border: none;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--border-color);
   }
 
   .submenu-group {
@@ -459,7 +500,7 @@
     padding: 4px 20px;
     font-size: 12px;
     font-weight: 500;
-    color: #64748b;
+    color: var(--text-secondary);
     text-transform: uppercase;
   }
 
@@ -484,10 +525,12 @@
   }
 
   .modal {
-    background: white;
+    background: var(--bg-primary);
+    color: var(--text-primary);
     padding: 24px;
     border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 60px var(--shadow);
+    border: 1px solid var(--border-color);
     max-width: 600px;
     width: 90%;
     max-height: 80vh;
@@ -524,9 +567,11 @@
     width: 100%;
     padding: 8px 12px;
     margin-top: 4px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     font-size: 14px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
   }
 
   .template-grid {
@@ -538,21 +583,23 @@
 
   .template-card {
     padding: 16px;
-    border: 2px solid #e5e7eb;
+    border: 2px solid var(--border-color);
     border-radius: 8px;
     cursor: pointer;
     text-align: center;
     transition: all 0.2s ease;
+    background: var(--bg-secondary);
   }
 
   .template-card:hover {
-    border-color: #3b82f6;
-    background: #f8fafc;
+    border-color: var(--accent-color);
+    background: var(--bg-tertiary);
   }
 
   .template-card.selected {
-    border-color: #3b82f6;
-    background: #eff6ff;
+    border-color: var(--accent-color);
+    background: var(--accent-color);
+    color: white;
   }
 
   .template-icon {
@@ -580,26 +627,27 @@
 
   .modal-actions button {
     padding: 8px 16px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    background: white;
+    background: var(--bg-primary);
+    color: var(--text-primary);
     cursor: pointer;
     font-size: 14px;
     transition: all 0.15s ease;
   }
 
   .modal-actions button:hover:not(:disabled) {
-    background: #f9fafb;
+    background: var(--bg-tertiary);
   }
 
   .modal-actions button.primary {
-    background: #3b82f6;
+    background: var(--accent-color);
     color: white;
-    border-color: #3b82f6;
+    border-color: var(--accent-color);
   }
 
   .modal-actions button.primary:hover:not(:disabled) {
-    background: #2563eb;
+    background: var(--accent-hover);
   }
 
   .modal-actions button:disabled {
