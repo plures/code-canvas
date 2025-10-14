@@ -1,14 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import CanvasEditor from './lib/canvas/CanvasEditor.svelte';
-  import ProjectManager from './lib/canvas/ProjectManager.svelte';
-  import CanvasToolbar from './lib/canvas/CanvasToolbar.svelte';
   import DraggablePanel from './lib/components/DraggablePanel.svelte';
-  import ApplicationToolbar from './lib/canvas/ApplicationToolbar.svelte';
-  import DevelopmentPanel from './lib/canvas/DevelopmentPanel.svelte';
+  import MainMenu from './lib/components/MainMenu.svelte';
   import PropertiesPanel from './lib/canvas/PropertiesPanel.svelte';
   import ModelDrivenInfo from './lib/canvas/ModelDrivenInfo.svelte';
-  import TodoAppArchitecture from './lib/canvas/TodoAppArchitecture.svelte';
   import FSMExecutionPanel from './lib/fsm/FSMExecutionPanel.svelte';
   import FSMValidationPanel from './lib/fsm/FSMValidationPanel.svelte';
   import { canvasStore } from './lib/stores/canvasStore.js';
@@ -18,13 +14,9 @@
 
   let mode: 'canvas' | 'fsm' = 'canvas';
 
-  // Panel component mapping
+  // Panel component mapping - only contextual panels that add information to main display
   const panelComponents = {
-    'applicationToolbar': ApplicationToolbar,
-    'canvasToolbar': CanvasToolbar,
-    'developmentPanel': DevelopmentPanel,
     'propertiesPanel': PropertiesPanel,
-    'projectManager': ProjectManager,
     'modelDrivenInfo': ModelDrivenInfo,
     'fsmExecutionPanel': FSMExecutionPanel,
     'fsmValidationPanel': FSMValidationPanel
@@ -32,20 +24,20 @@
 
   // Load auto-saved data or create sample data
   onMount(() => {
-    // Initialize window manager panels first
-    windowManagerStore.initializePanel('applicationToolbar', '🔧 Application Toolbar');
-    windowManagerStore.initializePanel('developmentPanel', '🚀 Development Panel');  
+    // Initialize only contextual panels that add information to main display
     windowManagerStore.initializePanel('propertiesPanel', '⚙️ Properties Panel');
     windowManagerStore.initializePanel('modelDrivenInfo', '🏗️ Model-Driven Info');
+    windowManagerStore.initializePanel('fsmExecutionPanel', '🔄 FSM Execution');
+    windowManagerStore.initializePanel('fsmValidationPanel', '✅ FSM Validation');
 
     // Set initial positions for better layout
-    windowManagerStore.movePanel('applicationToolbar', { x: 50, y: 50 });
-    windowManagerStore.movePanel('developmentPanel', { x: 400, y: 50 });
     windowManagerStore.movePanel('propertiesPanel', { x: 850, y: 50 });
     windowManagerStore.movePanel('modelDrivenInfo', { x: 100, y: 500 });
+    windowManagerStore.movePanel('fsmExecutionPanel', { x: 50, y: 300 });
+    windowManagerStore.movePanel('fsmValidationPanel', { x: 400, y: 300 });
 
     // Start with completely clean UX - no panels shown by default
-    // All panels are available but hidden by default for the cleanest possible experience
+    // Only contextual panels are available, everything else is in the main menu
 
     // Debug logging
     console.log('Window manager initialized with panels');
@@ -320,24 +312,19 @@
 </script>
 
 <main>
-  <div class="header">
-    <h1>🎨 Code Canvas - FSM Visual Editor</h1>
-    <div class="controls">
-      <button on:click={toggleMode} class="mode-toggle">
-        Switch to {mode === 'canvas' ? 'FSM' : 'Canvas'} Mode
-      </button>
-      <span class="mode-indicator">Current: {mode.toUpperCase()}</span>
-    </div>
+  <!-- Main Menu System -->
+  <MainMenu />
+  
+  <!-- Mode Toggle in top right -->
+  <div class="mode-controls">
+    <button on:click={toggleMode} class="mode-toggle">
+      {mode === 'canvas' ? '🎨' : '🔄'} {mode.toUpperCase()}
+    </button>
   </div>
 
   <div class="canvas-container">
     <CanvasEditor {mode} width={1000} height={700} />
   </div>
-
-  <!-- Floating action button to access panels -->
-  <button class="fab-panels" on:click={() => windowManagerStore.showPanel('applicationToolbar')}>
-    ⚙️
-  </button>
 
 
 
@@ -374,58 +361,35 @@
     font-family: system-ui, -apple-system, sans-serif;
   }
 
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding: 1rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 1.8rem;
-    font-weight: 700;
-  }
-
-  .controls {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    .mode-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
   }
 
   .mode-toggle {
-    background: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
     cursor: pointer;
+    font-size: 14px;
     font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
   }
 
   .mode-toggle:hover {
-    background: rgba(255, 255, 255, 0.3);
     transform: translateY(-1px);
-  }
-
-  .mode-indicator {
-    font-size: 0.9rem;
-    opacity: 0.9;
-    padding: 0.25rem 0.5rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   .canvas-container {
     display: flex;
     justify-content: center;
-    margin-bottom: 2rem;
+    padding-top: 80px; /* Space for fixed menu and mode toggle */
   }
 
   .info {
@@ -443,28 +407,5 @@
     color: #333;
   }
 
-  .fab-panels {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 24px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
 
-  .fab-panels:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-  }
 </style>
