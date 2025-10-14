@@ -5,7 +5,7 @@
   import { canvasStore } from '../stores/canvasStore.js';
   import { windowManagerStore } from '../stores/windowManagerStore.js';
   import { fsmStore } from '../stores/fsmStore.js';
-  import { projectTemplates } from '../templates/projectTemplates.js';
+  import { PROJECT_TEMPLATES } from '../templates/projectTemplates.js';
   import type { ProjectTemplate } from '../templates/projectTemplates.js';
   import { themePreference, currentTheme, initializeTheme } from '../stores/themeStore.js';
 
@@ -150,11 +150,11 @@
     canvasStore.clear();
     
     // Add template nodes and edges
-    selectedTemplate.canvasSetup.nodes.forEach(node => {
+    selectedTemplate.initialNodes.forEach(node => {
       canvasStore.addNode(node);
     });
     
-    selectedTemplate.canvasSetup.edges.forEach(edge => {
+    selectedTemplate.initialEdges.forEach(edge => {
       canvasStore.addEdge(edge);
     });
 
@@ -163,7 +163,8 @@
       template: selectedTemplate.id,
       fileStructure: selectedTemplate.fileStructure,
       dependencies: selectedTemplate.dependencies,
-      scripts: selectedTemplate.scripts
+      scripts: selectedTemplate.scripts,
+      devDependencies: selectedTemplate.devDependencies
     });
 
     // Reset form
@@ -347,7 +348,7 @@
         </label>
         
         <div class="template-grid">
-          {#each Object.values(projectTemplates) as template}
+          {#each PROJECT_TEMPLATES as template}
             <div 
               class="template-card"
               class:selected={selectedTemplate?.id === template.id}

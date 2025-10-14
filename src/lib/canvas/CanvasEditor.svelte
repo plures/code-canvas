@@ -92,6 +92,27 @@
     selectionStore.selectNode(node.id);
   }
 
+  function handleNodeDrilldown(event: CustomEvent) {
+    const { node } = event.detail;
+    console.log('Drilling down into node:', node);
+    
+    // If the node has a ref, navigate to it
+    if (node.ref) {
+      // This could open a new canvas, show a modal, or navigate to another view
+      // For now, let's show an alert - you can extend this functionality
+      alert(`Drilling down into: ${node.label}\nRef: ${node.ref}\nType: ${node.type}`);
+      
+      // TODO: Implement actual drill-down functionality
+      // Examples:
+      // - Load a new canvas from the ref
+      // - Show a detailed view panel  
+      // - Navigate to file/component in VSCode
+      // - Open a sub-canvas view
+    } else {
+      console.log('Node has no ref to drill down into');
+    }
+  }
+
   function handleMouseMove(event: MouseEvent) {
     const rect = svgElement.getBoundingClientRect();
     const screenX = event.clientX - rect.left;
@@ -351,6 +372,7 @@
           on:click={handleNodeClick}
           on:delete={() => canvasStore.removeNode(node.id)}
           on:updateLabel={(e) => canvasStore.updateNode(e.detail.nodeId, { label: e.detail.newLabel })}
+          on:drilldown={handleNodeDrilldown}
         />
       {/each}
     </g>

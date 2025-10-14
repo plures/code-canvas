@@ -85,7 +85,8 @@
         h: 90,
         appType: 'route',
         routePath: '/',
-        color: '#3b82f6'
+        color: '#3b82f6',
+        ref: 'src/routes/+page.svelte'
       });
 
       canvasStore.addNode({
@@ -98,7 +99,8 @@
         h: 90,
         appType: 'route',
         routePath: '/login',
-        color: '#3b82f6'
+        color: '#3b82f6',
+        ref: 'src/routes/login/+page.svelte'
       });
 
       canvasStore.addNode({
@@ -191,7 +193,8 @@
         w: 120,
         h: 70,
         appType: 'component',
-        color: '#10b981'
+        color: '#10b981',
+        ref: 'src/lib/components/Navigation.svelte'
       });
 
       canvasStore.addNode({
