@@ -32,29 +32,47 @@
     send({ type: 'SELECT_NODE', nodeId });
   }
 
-  function handleNodeDragStart(event, node) {
-    draggedNode = node;
-    const rect = event.target.getBoundingClientRect();
-    dragOffset = {
-      x: event.clientX - node.x * zoom,
-      y: event.clientY - node.y * zoom,
-    };
+  function handleNodeDoubleClick(nodeId) {
+    send({ type: 'SELECT_NODE', nodeId });
+    send({ type: 'EDIT_NODE' });
   }
 
-  function handleNodeDrag(event) {
-    if (!draggedNode) return;
+  function handleNodeMouseDown(event, node) {
+    event.stopPropagation();
+    draggedNode = node;
     
-    const newX = Math.round((event.clientX - dragOffset.x) / zoom / 20) * 20;
-    const newY = Math.round((event.clientY - dragOffset.y) / zoom / 20) * 20;
+    // Calculate offset from node position to click position
+    const svgRect = svgElement.getBoundingClientRect();
+    const clickX = (event.clientX - svgRect.left) / zoom;
+    const clickY = (event.clientY - svgRect.top) / zoom;
+    
+    dragOffset = {
+      x: clickX - node.x,
+      y: clickY - node.y,
+    };
+    
+    send({ type: 'SELECT_NODE', nodeId: node.id });
+  }
+
+  function handleMouseMove(event) {
+    if (!draggedNode || !svgElement) return;
+    
+    const svgRect = svgElement.getBoundingClientRect();
+    const mouseX = (event.clientX - svgRect.left) / zoom;
+    const mouseY = (event.clientY - svgRect.top) / zoom;
+    
+    // Calculate new position with grid snap
+    const newX = Math.round((mouseX - dragOffset.x) / 20) * 20;
+    const newY = Math.round((mouseY - dragOffset.y) / 20) * 20;
     
     send({
       type: 'MOVE_NODE',
-      x: newX,
-      y: newY,
+      x: Math.max(0, newX),
+      y: Math.max(0, newY),
     });
   }
 
-  function handleNodeDragEnd() {
+  function handleMouseUp() {
     draggedNode = null;
   }
 
@@ -130,6 +148,9 @@
       width="1200"
       height="800"
       style:transform="scale({zoom})"
+      onmousemove={handleMouseMove}
+      onmouseup={handleMouseUp}
+      onmouseleave={handleMouseUp}
     >
       <!-- Render edges -->
       {#each edges as edge, idx}
@@ -167,7 +188,10 @@
         <g
           class="node"
           class:selected={isSelected}
+          class:dragging={draggedNode?.id === node.id}
+          onmousedown={(e) => handleNodeMouseDown(e, node)}
           onclick={() => handleNodeClick(node.id)}
+          ondblclick={() => handleNodeDoubleClick(node.id)}
           role="button"
           tabindex="0"
         >
@@ -300,11 +324,16 @@
   }
 
   .node {
-    cursor: pointer;
+    cursor: move;
+    transition: filter 0.2s;
   }
 
   .node.selected .node-rect {
     filter: drop-shadow(0 0 8px rgba(255, 107, 107, 0.5));
+  }
+
+  .node.dragging {
+    opacity: 0.8;
   }
 
   .edge line {
