@@ -1,0 +1,79 @@
+{
+  "name": "code-canvas-vscode",
+  "displayName": "Code Canvas",
+  "description": "Visual canvas editor with Svelte 5 + XState FSM support",
+  "version": "0.1.0",
+  "publisher": "code-canvas",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "canvas",
+    "visual editor",
+    "xstate",
+    "fsm",
+    "svelte"
+  ],
+  "activationEvents": [
+    "onCommand:code-canvas.openEditor",
+    "onLanguage:yaml"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "code-canvas.openEditor",
+        "title": "Open Canvas Editor",
+        "category": "Code Canvas"
+      },
+      {
+        "command": "code-canvas.createMachine",
+        "title": "Create XState Machine",
+        "category": "Code Canvas"
+      },
+      {
+        "command": "code-canvas.visualizeMachine",
+        "title": "Visualize XState Machine",
+        "category": "Code Canvas"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "when": "resourceExtname == .yaml || resourceExtname == .canvas",
+          "command": "code-canvas.openEditor",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Code Canvas",
+      "properties": {
+        "codeCanvas.gridSize": {
+          "type": "number",
+          "default": 20,
+          "description": "Grid snap size in pixels"
+        },
+        "codeCanvas.autoSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save canvas on changes"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "cd ../webapp && npm run build",
+    "watch": "cd ../webapp && npm run dev",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "vsce": "^2.15.0"
+  }
+}
