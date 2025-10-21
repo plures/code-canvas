@@ -4,6 +4,11 @@ output/
 # Deno
 deno.lock
 
+# Node.js / npm
+node_modules/
+webapp/node_modules/
+webapp/dist/
+
 # OS
 .DS_Store
 Thumbs.db

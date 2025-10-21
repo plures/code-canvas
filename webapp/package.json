@@ -1,0 +1,24 @@
+{
+  "name": "code-canvas-webapp",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["canvas", "svelte", "xstate", "fsm", "visual-editor"],
+  "author": "",
+  "license": "ISC",
+  "description": "Code Canvas - Svelte 5 + XState FSM Editor",
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "svelte": "^5.41.1",
+    "vite": "^7.1.11"
+  },
+  "dependencies": {
+    "@xstate/svelte": "^5.0.0",
+    "xstate": "^5.23.0"
+  }
+}
