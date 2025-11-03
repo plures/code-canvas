@@ -2,7 +2,19 @@
  * Tests for ADP module
  */
 
-import { assertEquals, assertExists } from "jsr:@std/assert";
+// Simple test assertions
+function assertEquals(actual: any, expected: any, msg?: string) {
+  if (actual !== expected) {
+    throw new Error(msg || `Expected ${expected} but got ${actual}`);
+  }
+}
+
+function assertExists(value: any, msg?: string) {
+  if (value === null || value === undefined) {
+    throw new Error(msg || `Value does not exist`);
+  }
+}
+
 import { Guardian, FSMManager, RulesEngine } from "./mod.ts";
 import { StateDocsManager } from "../state-docs/mod.ts";
 

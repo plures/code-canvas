@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **State-Docs and ADP Modules** - Dual support squared integration
+  - `modules/state-docs/`: Reusable state documentation management module
+    - Lifecycle FSM management with state transitions
+    - Activity tracking and history
+    - Validation rules configuration
+    - Canvas-based design documentation support
+  - `modules/adp/`: AI Development Pattern module for validation and guardrails
+    - Guardian validation engine with activity-based file access control
+    - FSM enforcement for state-aware development
+    - Rules engine for invariants, chores, and constraints
+    - Commit size validation and YAML syntax checking
+  - `tools/integrated-guardian.ts`: Integration tool using both modules
+    - Validate file changes against current activity
+    - Show current activity and lifecycle states
+    - Check if paths are allowed in current activity
+    - CLI interface for all validation operations
+  - `templates/project-with-modules/`: Template for projects with State-Docs + ADP
+    - Pre-configured sot/ structure
+    - Ready-to-use lifecycle and rules definitions
+    - Integrated guardian CLI tasks
+  - `sot/canvas/state-docs-adp-integration.canvas.yaml`: Visual integration architecture
+  - Dual support pattern: Modules used internally by Code Canvas and offered to external projects
+
 - **Self-Managing Design Canvas System** (`tools/self-managing-canvas-server.ts`)
   - Interactive architecture visualization with drill-down capability
   - Visual representation of Code Canvas application itself (meta-canvas)

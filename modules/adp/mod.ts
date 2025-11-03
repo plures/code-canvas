@@ -6,7 +6,6 @@
  */
 
 import { StateDocsManager } from "../state-docs/mod.ts";
-import { join } from "jsr:@std/path";
 
 export interface ValidationResult {
   valid: boolean;
@@ -176,9 +175,9 @@ export class Guardian {
   private async validateYAML(path: string): Promise<{ valid: boolean; error?: string }> {
     try {
       const content = await Deno.readTextFile(path);
-      const { parse } = await import("jsr:@std/yaml");
-      parse(content);
-      return { valid: true };
+      // Use StateDocsManager's parser through import
+      const { StateDocsValidator } = await import("../state-docs/mod.ts");
+      return await StateDocsValidator.validateYAML(path);
     } catch (error) {
       return {
         valid: false,
