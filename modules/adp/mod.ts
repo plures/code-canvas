@@ -5,7 +5,7 @@
  * Integrates with State-Docs for FSM-controlled workflows.
  */
 
-import { StateDocsManager } from "../state-docs/mod.ts";
+import { StateDocsManager, StateDocsValidator } from "../state-docs/mod.ts";
 
 export interface ValidationResult {
   valid: boolean;
@@ -173,17 +173,7 @@ export class Guardian {
    * Validate YAML file
    */
   private async validateYAML(path: string): Promise<{ valid: boolean; error?: string }> {
-    try {
-      const content = await Deno.readTextFile(path);
-      // Use StateDocsManager's parser through import
-      const { StateDocsValidator } = await import("../state-docs/mod.ts");
-      return await StateDocsValidator.validateYAML(path);
-    } catch (error) {
-      return {
-        valid: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await StateDocsValidator.validateYAML(path);
   }
 
   /**

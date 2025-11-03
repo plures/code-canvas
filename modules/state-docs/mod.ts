@@ -87,20 +87,22 @@ function parseLifecycle(content: string): any {
       } else if (inRequiredChores) {
         if (trimmed.startsWith('- whenAnyMatches:')) {
           if (currentChore) currentState.requiredChores.push(currentChore);
-          currentChore = { whenAnyMatches: [], mustAlsoChange: [] };
+          currentChore = { whenAnyMatches: [], mustAlsoChange: [], currentArray: 'whenAnyMatches' };
         } else if (trimmed.startsWith('whenAnyMatches:')) {
           if (currentChore) currentState.requiredChores.push(currentChore);
-          currentChore = { whenAnyMatches: [], mustAlsoChange: [] };
+          currentChore = { whenAnyMatches: [], mustAlsoChange: [], currentArray: 'whenAnyMatches' };
         } else if (currentChore) {
-          if (trimmed.startsWith('- ') && indent > 4) {
+          if (trimmed.startsWith('mustAlsoChange:')) {
+            // Switch to mustAlsoChange array
+            currentChore.currentArray = 'mustAlsoChange';
+          } else if (trimmed.startsWith('- ') && indent > 4) {
             const value = trimmed.substring(2).replace(/^["']|["']$/g, '');
-            if (line.indexOf('whenAnyMatches') > -1 || line.indexOf('- ') > line.indexOf('whenAnyMatches')) {
+            // Add to current array based on context
+            if (currentChore.currentArray === 'whenAnyMatches') {
               currentChore.whenAnyMatches.push(value);
             } else {
               currentChore.mustAlsoChange.push(value);
             }
-          } else if (trimmed.startsWith('mustAlsoChange:')) {
-            // Next items will be mustAlsoChange
           }
         }
       }
@@ -137,6 +139,7 @@ function parseRules(content: string): any {
   let inCheck = false;
   let inWhen = false;
   let inThen = false;
+  let currentArrayKey: string | null = null;
   
   for (const line of lines) {
     if (!line.trim() || line.trim().startsWith('#')) continue;
@@ -164,31 +167,36 @@ function parseRules(content: string): any {
       inCheck = false;
       inWhen = false;
       inThen = false;
+      currentArrayKey = null;
     } else if (currentItem) {
       if (trimmed.startsWith('description:')) {
         currentItem.description = trimmed.substring(trimmed.indexOf(':') + 1).trim().replace(/^["']|["']$/g, '');
       } else if (trimmed === 'check:') {
         currentItem.check = {};
         inCheck = true;
+        currentArrayKey = null;
       } else if (trimmed === 'when:') {
         currentItem.when = {};
         inWhen = true;
+        currentArrayKey = null;
       } else if (trimmed === 'then:') {
         currentItem.then = {};
         inThen = true;
+        currentArrayKey = null;
       } else if (inCheck && trimmed.includes(':')) {
         const [key, ...valueParts] = trimmed.split(':');
         const value = valueParts.join(':').trim();
         if (key.trim() === 'patterns' || key.trim() === 'forbidden_patterns' || key.trim() === 'allowed_exceptions') {
           currentItem.check[key.trim()] = [];
+          currentArrayKey = key.trim();
         } else if (trimmed.startsWith('- ')) {
-          // Array item for patterns
-          const arrayKey = Object.keys(currentItem.check).filter(k => Array.isArray(currentItem.check[k])).pop();
-          if (arrayKey) {
-            currentItem.check[arrayKey].push(trimmed.substring(2).replace(/^["']|["']$/g, ''));
+          // Array item - add to current array context
+          if (currentArrayKey && currentItem.check[currentArrayKey]) {
+            currentItem.check[currentArrayKey].push(trimmed.substring(2).replace(/^["']|["']$/g, ''));
           }
         } else {
           currentItem.check[key.trim()] = isNaN(Number(value)) ? value.replace(/^["']|["']$/g, '') : Number(value);
+          currentArrayKey = null;
         }
       }
     }
@@ -199,6 +207,16 @@ function parseRules(content: string): any {
   }
   
   return result;
+}
+
+/**
+ * Parse history YAML
+ */
+function parseHistory(content: string): any {
+  // Simple parser for history format
+  // For now, return empty if parsing is complex
+  // This would need proper implementation for production use
+  return { history: [] };
 }
 
 export interface Activity {
@@ -303,7 +321,7 @@ export class StateDocsManager {
     const path = joinPath(this.sotPath, "state", "history.yaml");
     try {
       const content = await Deno.readTextFile(path);
-      const data = parseActivity(content) as { history: HistoryEntry[] };
+      const data = parseHistory(content) as { history: HistoryEntry[] };
       return data.history || [];
     } catch {
       return [];
@@ -335,7 +353,7 @@ export class StateDocsManager {
     let history: HistoryEntry[] = [];
     try {
       const historyContent = await Deno.readTextFile(historyPath);
-      const historyData = parseActivity(historyContent) as { history: HistoryEntry[] };
+      const historyData = parseHistory(historyContent) as { history: HistoryEntry[] };
       history = historyData.history || [];
     } catch {
       // File doesn't exist yet

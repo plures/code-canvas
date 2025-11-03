@@ -21,9 +21,9 @@ async function main() {
       const files = args.slice(1);
       
       if (files.length === 0) {
-        console.log("Usage: deno run -A tools/integrated-guardian.ts validate <file1> <file2> ...");
+        console.log("Usage: integrated-guardian validate <file1> <file2> ...");
         console.log("Or use git to get staged files:");
-        console.log("  git diff --cached --name-only | xargs deno run -A tools/integrated-guardian.ts validate");
+        console.log("  git diff --cached --name-only | xargs integrated-guardian validate");
         Deno.exit(1);
       }
 
@@ -77,7 +77,7 @@ async function main() {
     case "check-path": {
       const path = args[1];
       if (!path) {
-        console.log("Usage: deno run -A tools/integrated-guardian.ts check-path <path>");
+        console.log("Usage: integrated-guardian check-path <path>");
         Deno.exit(1);
       }
 
