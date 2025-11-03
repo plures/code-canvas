@@ -1,0 +1,47 @@
+initial: design
+states:
+  - id: design
+    label: Design
+    allowedPaths:
+      - "sot/**"
+      - "designs/**"
+      - "docs/**"
+      - "tests/**"
+      - "README.md"
+    requiredChores:
+      - whenAnyMatches: ["designs/**"]
+        mustAlsoChange: ["tests/**"]
+        
+  - id: implementation
+    label: Implementation
+    allowedPaths:
+      - "src/**"
+      - "tests/**"
+      - "sot/**"
+      - "docs/**"
+      - "CHANGELOG.md"
+    requiredChores:
+      - whenAnyMatches: ["src/**"]
+        mustAlsoChange: ["tests/**"]
+        
+  - id: release
+    label: Release
+    allowedPaths:
+      - "CHANGELOG.md"
+      - "package.json"
+      - "deno.json"
+      - "sot/**"
+    requiredChores:
+      - whenAnyMatches: ["package.json", "deno.json"]
+        mustAlsoChange: ["CHANGELOG.md"]
+
+transitions:
+  - from: design
+    to: implementation
+    guard: "rule: ok :- tests(updated) & designs(approved)."
+  - from: implementation
+    to: release
+    guard: "rule: ok :- tests(passing) & coverage(>=90)."
+  - from: release
+    to: design
+    guard: "ok."

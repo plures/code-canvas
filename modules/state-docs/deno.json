@@ -1,0 +1,12 @@
+{
+  "name": "@code-canvas/state-docs",
+  "version": "0.1.0",
+  "description": "State documentation management for AI-assisted projects",
+  "exports": "./mod.ts",
+  "tasks": {
+    "test": "deno test --allow-all"
+  },
+  "compilerOptions": {
+    "strict": true
+  }
+}

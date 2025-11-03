@@ -1,0 +1,13 @@
+{
+  "name": "my-project",
+  "version": "0.1.0",
+  "tasks": {
+    "validate": "deno run -A ../../tools/integrated-guardian.ts validate",
+    "activity": "deno run -A ../../tools/integrated-guardian.ts activity",
+    "lifecycle": "deno run -A ../../tools/integrated-guardian.ts lifecycle",
+    "check-path": "deno run -A ../../tools/integrated-guardian.ts check-path"
+  },
+  "compilerOptions": {
+    "strict": true
+  }
+}

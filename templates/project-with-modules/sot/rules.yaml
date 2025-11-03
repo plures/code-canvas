@@ -1,0 +1,46 @@
+invariants:
+  - id: small_docs
+    description: Keep docs and tests small for better context
+    check:
+      type: file_size
+      patterns: ["docs/**/*.md", "tests/**/*.md"]
+      max_lines: 200
+      max_chars: 8000
+      
+  - id: yaml_valid
+    description: All YAML files must be valid
+    check:
+      type: yaml_syntax
+      patterns: ["sot/**/*.yaml", "**/*.canvas.yaml"]
+      
+  - id: no_large_commits
+    description: Commits should be focused and small
+    check:
+      type: commit_size
+      max_files: 25
+      max_additions: 2500
+
+chores:
+  - id: version_changelog
+    description: Version bumps require changelog updates
+    when:
+      patterns: ["package.json", "deno.json"]
+      content_matches: ["version.*:"]
+    then:
+      must_change: ["CHANGELOG.md"]
+      
+  - id: tool_changes
+    description: Tool changes should include usage examples
+    when:
+      patterns: ["tools/*.ts"]
+    then:
+      must_change: ["docs/**", "README.md"]
+
+constraints:
+  - id: implementation_requires_tests
+    description: Implementation must include tests
+    applies_to_activity: implementation
+    when:
+      patterns: ["src/**"]
+    then:
+      must_also_change: ["tests/**"]
