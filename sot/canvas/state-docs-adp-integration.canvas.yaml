@@ -1,0 +1,200 @@
+nodes:
+  # State-Docs Module
+  - id: state-docs
+    type: control
+    label: State-Docs Module
+    x: 100
+    y: 100
+    w: 160
+    h: 80
+    ref: "modules/state-docs/mod.ts"
+    props:
+      description: "State management & lifecycle"
+      drillDown: "file"
+      
+  - id: state-manager
+    type: fsm
+    label: StateDocsManager
+    x: 100
+    y: 220
+    w: 160
+    h: 60
+    props:
+      description: "Lifecycle, rules, history"
+      
+  # ADP Module
+  - id: adp
+    type: control
+    label: ADP Module
+    x: 300
+    y: 100
+    w: 160
+    h: 80
+    ref: "modules/adp/mod.ts"
+    props:
+      description: "Validation & guardrails"
+      drillDown: "file"
+      
+  - id: guardian
+    type: control
+    label: Guardian
+    x: 300
+    y: 220
+    w: 160
+    h: 60
+    props:
+      description: "Validation engine"
+      
+  - id: fsm-manager
+    type: fsm
+    label: FSM Manager
+    x: 300
+    y: 320
+    w: 160
+    h: 60
+    props:
+      description: "State transitions"
+      
+  # Integration
+  - id: integrated-guardian
+    type: control
+    label: Integrated Guardian
+    x: 200
+    y: 420
+    w: 180
+    h: 80
+    ref: "tools/integrated-guardian.ts"
+    props:
+      description: "Uses State-Docs + ADP"
+      drillDown: "file"
+      
+  # Code Canvas Usage
+  - id: code-canvas
+    type: doc
+    label: Code Canvas
+    x: 500
+    y: 100
+    w: 140
+    h: 60
+    props:
+      description: "Uses modules internally"
+      
+  - id: project-template
+    type: doc
+    label: Project Template
+    x: 500
+    y: 220
+    w: 140
+    h: 60
+    ref: "templates/project-with-modules/"
+    props:
+      description: "Includes both modules"
+      drillDown: "directory"
+      
+  - id: external-projects
+    type: doc
+    label: External Projects
+    x: 500
+    y: 340
+    w: 140
+    h: 60
+    props:
+      description: "Created with Code Canvas"
+      
+  # SoT Data
+  - id: sot
+    type: database
+    label: sot/
+    x: 700
+    y: 220
+    w: 100
+    h: 60
+    ref: "sot/"
+    props:
+      description: "State data"
+      drillDown: "directory"
+      
+edges:
+  # Module dependencies
+  - from: state-docs
+    to: state-manager
+    label: "exports"
+    kind: implements
+    
+  - from: adp
+    to: guardian
+    label: "exports"
+    kind: implements
+    
+  - from: adp
+    to: fsm-manager
+    label: "exports"
+    kind: implements
+    
+  - from: guardian
+    to: state-manager
+    label: "uses"
+    kind: implements
+    
+  - from: fsm-manager
+    to: state-manager
+    label: "uses"
+    kind: implements
+    
+  # Integration
+  - from: integrated-guardian
+    to: state-docs
+    label: "imports"
+    kind: implements
+    
+  - from: integrated-guardian
+    to: adp
+    label: "imports"
+    kind: implements
+    
+  # Dual support
+  - from: code-canvas
+    to: state-docs
+    label: "internal use"
+    kind: implements
+    
+  - from: code-canvas
+    to: adp
+    label: "internal use"
+    kind: implements
+    
+  - from: project-template
+    to: state-docs
+    label: "includes"
+    kind: implements
+    
+  - from: project-template
+    to: adp
+    label: "includes"
+    kind: implements
+    
+  - from: external-projects
+    to: project-template
+    label: "based on"
+    kind: triggers
+    
+  - from: external-projects
+    to: state-docs
+    label: "external use"
+    kind: implements
+    
+  - from: external-projects
+    to: adp
+    label: "external use"
+    kind: implements
+    
+  # Data access
+  - from: state-manager
+    to: sot
+    label: "reads/writes"
+    kind: implements
+    
+  - from: code-canvas
+    to: sot
+    label: "uses"
+    kind: implements

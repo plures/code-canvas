@@ -1,0 +1,13 @@
+{
+  "name": "@code-canvas/adp",
+  "version": "0.1.0",
+  "description": "AI Development Pattern - Validation and guardrails for AI-assisted development",
+  "exports": "./mod.ts",
+  "tasks": {
+    "test": "deno test --allow-all",
+    "install-hooks": "deno run -A install.ts"
+  },
+  "compilerOptions": {
+    "strict": true
+  }
+}
