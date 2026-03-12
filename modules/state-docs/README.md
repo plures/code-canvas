@@ -5,6 +5,7 @@ A reusable module for managing state documentation in AI-assisted projects.
 ## Purpose
 
 State-Docs provides a structured approach to maintaining a Single Source of Truth (SoT) for project state, including:
+
 - Lifecycle definitions (FSM)
 - Validation rules
 - State history tracking
@@ -40,9 +41,9 @@ state-docs/
 ### As a Standalone Module
 
 ```typescript
-import { StateDocsManager } from './state-docs/mod.ts';
+import { StateDocsManager } from "./state-docs/mod.ts";
 
-const manager = new StateDocsManager('./sot');
+const manager = new StateDocsManager("./sot");
 const currentActivity = await manager.getCurrentActivity();
 const lifecycle = await manager.getLifecycle();
 ```
@@ -81,6 +82,7 @@ deno run -A tools/create-project.ts my-project --with-state-docs
 ### Dual Support
 
 State-Docs can be used in two ways:
+
 1. **Internal**: Govern the code-canvas project itself
 2. **External**: Offered as a feature to projects using code-canvas
 
@@ -91,6 +93,7 @@ State-Docs uses itself to manage its own development lifecycle.
 ## Configuration
 
 See `schemas/` directory for configuration schemas:
+
 - `lifecycle.schema.yaml` - FSM structure
 - `rules.schema.yaml` - Validation rules format
 - `activity.schema.yaml` - Activity state format

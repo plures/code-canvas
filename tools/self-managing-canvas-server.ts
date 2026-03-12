@@ -60,7 +60,7 @@ const NODE_STYLES = {
   text: { fill: "#fff3e0", stroke: "#e65100", strokeWidth: 2 },
   file: { fill: "#e8f5e8", stroke: "#1b5e20", strokeWidth: 2 },
   link: { fill: "#e1f5fe", stroke: "#01579b", strokeWidth: 2 },
-  group: { fill: "#f5f5f5", stroke: "#757575", strokeWidth: 1 }
+  group: { fill: "#f5f5f5", stroke: "#757575", strokeWidth: 1 },
 };
 
 const EDGE_STYLES = {
@@ -68,14 +68,14 @@ const EDGE_STYLES = {
   guards: { stroke: "#1976d2", dash: "10,2" },
   tests: { stroke: "#388e3c", dash: "3,3" },
   implements: { stroke: "#f57c00", dash: "none" },
-  docs: { stroke: "#7b1fa2", dash: "8,4" }
+  docs: { stroke: "#7b1fa2", dash: "8,4" },
 };
 
 function renderCanvasToSvg(canvas: Canvas): string {
   let maxX = 800, maxY = 600;
   if (canvas.nodes.length > 0) {
-    maxX = Math.max(...canvas.nodes.map(n => n.x + (n.w || n.width || 120))) + 40;
-    maxY = Math.max(...canvas.nodes.map(n => n.y + (n.h || n.height || 60))) + 40;
+    maxX = Math.max(...canvas.nodes.map((n) => n.x + (n.w || n.width || 120))) + 40;
+    maxY = Math.max(...canvas.nodes.map((n) => n.y + (n.h || n.height || 60))) + 40;
   }
 
   const renderNode = (node: CanvasNode) => {
@@ -84,22 +84,23 @@ function renderCanvasToSvg(canvas: Canvas): string {
     const width = node.w || node.width || 120;
     const height = node.h || node.height || 60;
     const fill = node.color || style.fill;
-    
+
     // Add drill-down indicator if node has ref
-    const drillDownIcon = node.ref ? 
-      `<circle cx="${node.x + width - 15}" cy="${node.y + 15}" r="8" 
+    const drillDownIcon = node.ref
+      ? `<circle cx="${node.x + width - 15}" cy="${node.y + 15}" r="8" 
                fill="#2196f3" stroke="white" stroke-width="2" class="drill-down-icon" 
                title="Click to drill down into ${node.ref}"/>
        <text x="${node.x + width - 15}" y="${node.y + 20}" 
              text-anchor="middle" font-family="Arial" font-size="10" 
-             font-weight="bold" fill="white" class="drill-down-text">↓</text>` : '';
-    
+             font-weight="bold" fill="white" class="drill-down-text">↓</text>`
+      : "";
+
     return `<g class="node node-${node.type}" id="node-${node.id}" 
                data-x="${node.x}" data-y="${node.y}" data-w="${width}" data-h="${height}"
-               data-ref="${node.ref || ''}" data-drill-down="${node.props?.drillDown || ''}">
+               data-ref="${node.ref || ""}" data-drill-down="${node.props?.drillDown || ""}">
       <rect x="${node.x}" y="${node.y}" width="${width}" height="${height}"
             fill="${fill}" stroke="${style.stroke}" stroke-width="${style.strokeWidth}" rx="5"/>
-      <text x="${node.x + width/2}" y="${node.y + height/2}" 
+      <text x="${node.x + width / 2}" y="${node.y + height / 2}" 
             text-anchor="middle" dominant-baseline="middle"
             font-family="Arial" font-size="14" font-weight="600">${label}</text>
       ${drillDownIcon}
@@ -109,20 +110,20 @@ function renderCanvasToSvg(canvas: Canvas): string {
   const renderEdge = (edge: CanvasEdge, index: number) => {
     const fromId = edge.from || edge.fromNode;
     const toId = edge.to || edge.toNode;
-    const from = canvas.nodes.find(n => n.id === fromId);
-    const to = canvas.nodes.find(n => n.id === toId);
-    if (!from || !to) return '';
+    const from = canvas.nodes.find((n) => n.id === fromId);
+    const to = canvas.nodes.find((n) => n.id === toId);
+    if (!from || !to) return "";
 
     const fromWidth = from.w || from.width || 120;
     const fromHeight = from.h || from.height || 60;
     const toWidth = to.w || to.width || 120;
     const toHeight = to.h || to.height || 60;
-    
+
     const x1 = from.x + fromWidth / 2, y1 = from.y + fromHeight / 2;
     const x2 = to.x + toWidth / 2, y2 = to.y + toHeight / 2;
-    const style = EDGE_STYLES[edge.kind || 'implements'];
-    const dashAttr = style.dash !== 'none' ? `stroke-dasharray="${style.dash}"` : '';
-    
+    const style = EDGE_STYLES[edge.kind || "implements"];
+    const dashAttr = style.dash !== "none" ? `stroke-dasharray="${style.dash}"` : "";
+
     const angle = Math.atan2(y2 - y1, x2 - x1);
     const size = 10;
     const ax1 = x2 - size * Math.cos(angle - Math.PI / 6);
@@ -130,16 +131,21 @@ function renderCanvasToSvg(canvas: Canvas): string {
     const ax2 = x2 - size * Math.cos(angle + Math.PI / 6);
     const ay2 = y2 - size * Math.sin(angle + Math.PI / 6);
 
-    return `<g class="edge edge-${edge.kind || 'default'}" id="edge-${index}">
+    return `<g class="edge edge-${edge.kind || "default"}" id="edge-${index}">
       <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="edge-visual"
             stroke="${style.stroke}" stroke-width="2" ${dashAttr}/>
       <polygon points="${x2},${y2} ${ax1},${ay1} ${ax2},${ay2}" fill="${style.stroke}"/>
-      ${edge.label ? `<text x="${(x1+x2)/2}" y="${(y1+y2)/2-5}" text-anchor="middle" 
-                             font-family="Arial" font-size="12" fill="${style.stroke}">${edge.label}</text>` : ''}
+      ${
+      edge.label
+        ? `<text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 - 5}" text-anchor="middle" 
+                             font-family="Arial" font-size="12" fill="${style.stroke}">${edge.label}</text>`
+        : ""
+    }
     </g>`;
   };
 
-  const gridPattern = `<pattern id="grid" width="${GRID_SIZE}" height="${GRID_SIZE}" patternUnits="userSpaceOnUse">
+  const gridPattern =
+    `<pattern id="grid" width="${GRID_SIZE}" height="${GRID_SIZE}" patternUnits="userSpaceOnUse">
     <path d="M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}" fill="none" stroke="#e0e0e0" stroke-width="0.5"/>
   </pattern>`;
 
@@ -175,8 +181,8 @@ function renderCanvasToSvg(canvas: Canvas): string {
     </style>
   </defs>
   <rect width="100%" height="100%" fill="url(#grid)"/>
-  ${canvas.nodes.map(renderNode).join('')}
-  ${canvas.edges.map((edge, index) => renderEdge(edge, index)).join('')}
+  ${canvas.nodes.map(renderNode).join("")}
+  ${canvas.edges.map((edge, index) => renderEdge(edge, index)).join("")}
 </svg>`;
 }
 
@@ -951,129 +957,131 @@ window.addEventListener('load', async () => {
     </script>
 </body>
 </html>`;
-  
+
   return template;
 }
 
 async function startServer(options: ServerOptions): Promise<void> {
   const { port, file } = options;
   let canvasData: Canvas = { nodes: [], edges: [] };
-  
+
   console.log(`🎨 Self-Managing Canvas Server on http://localhost:${port}`);
   console.log(`📁 Canvas directory: ${CANVAS_DIR}`);
   if (file) console.log(`📄 Default canvas: ${file}`);
-  
+
   const handler = async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
     const path = url.pathname;
-    
-    if (path === '/') {
-      const targetFile = file || 'code-canvas-architecture.canvas.yaml';
+
+    if (path === "/") {
+      const targetFile = file || "code-canvas-architecture.canvas.yaml";
       // If file already includes the directory path, use it directly
-      const canvasPath = targetFile.includes('/') ? targetFile : join(CANVAS_DIR, targetFile);
-      
+      const canvasPath = targetFile.includes("/") ? targetFile : join(CANVAS_DIR, targetFile);
+
       try {
         if (await exists(canvasPath)) {
           const content = await Deno.readTextFile(canvasPath);
           canvasData = yaml.parse(content) as Canvas;
           const svgContent = renderCanvasToSvg(canvasData);
           const html = generateEditorHtml(targetFile, svgContent);
-          return new Response(html, { headers: { 'Content-Type': 'text/html' } });
+          return new Response(html, { headers: { "Content-Type": "text/html" } });
         }
       } catch (error) {
-        console.error('Error loading canvas:', error);
+        console.error("Error loading canvas:", error);
       }
-      
-      return new Response('Canvas file not found', { status: 404 });
+
+      return new Response("Canvas file not found", { status: 404 });
     }
-    
-    if (path === '/api/canvas') {
-      const canvasFile = url.searchParams.get('file') || file || 'code-canvas-architecture.canvas.yaml';
+
+    if (path === "/api/canvas") {
+      const canvasFile = url.searchParams.get("file") || file ||
+        "code-canvas-architecture.canvas.yaml";
       // If file already includes the directory path, use it directly
-      const canvasPath = canvasFile.includes('/') ? canvasFile : join(CANVAS_DIR, canvasFile);
-      
+      const canvasPath = canvasFile.includes("/") ? canvasFile : join(CANVAS_DIR, canvasFile);
+
       try {
         const content = await Deno.readTextFile(canvasPath);
         canvasData = yaml.parse(content) as Canvas;
         return new Response(JSON.stringify(canvasData), {
-          headers: { 'Content-Type': 'application/json' }
+          headers: { "Content-Type": "application/json" },
         });
       } catch (error) {
         return new Response(JSON.stringify({ error: error.message }), { status: 500 });
       }
     }
-    
-    if (path === '/api/render') {
-      const canvasFile = url.searchParams.get('file') || file || 'code-canvas-architecture.canvas.yaml';
+
+    if (path === "/api/render") {
+      const canvasFile = url.searchParams.get("file") || file ||
+        "code-canvas-architecture.canvas.yaml";
       // If file already includes the directory path, use it directly
-      const canvasPath = canvasFile.includes('/') ? canvasFile : join(CANVAS_DIR, canvasFile);
-      
+      const canvasPath = canvasFile.includes("/") ? canvasFile : join(CANVAS_DIR, canvasFile);
+
       try {
         const content = await Deno.readTextFile(canvasPath);
         const canvas = yaml.parse(content) as Canvas;
         const svgContent = renderCanvasToSvg(canvas);
         return new Response(svgContent, {
-          headers: { 'Content-Type': 'image/svg+xml' }
+          headers: { "Content-Type": "image/svg+xml" },
         });
       } catch (error) {
-        return new Response('Error rendering canvas', { status: 500 });
+        return new Response("Error rendering canvas", { status: 500 });
       }
     }
-    
-    if (path === '/api/file') {
-      const filePath = url.searchParams.get('path');
+
+    if (path === "/api/file") {
+      const filePath = url.searchParams.get("path");
       if (!filePath) {
-        return new Response('Missing file path', { status: 400 });
+        return new Response("Missing file path", { status: 400 });
       }
-      
+
       try {
         const content = await Deno.readTextFile(filePath);
         return new Response(content, {
-          headers: { 'Content-Type': 'text/plain' }
+          headers: { "Content-Type": "text/plain" },
         });
       } catch (error) {
         return new Response(`Error reading file: ${error.message}`, { status: 500 });
       }
     }
-    
-    if (path === '/api/edit-file' && req.method === 'POST') {
+
+    if (path === "/api/edit-file" && req.method === "POST") {
       const body = await req.json();
       const filePath = body.path;
-      
+
       try {
         // Open file in VS Code (this would need to be implemented based on your setup)
-        const command = new Deno.Command('code', { args: [filePath] });
+        const command = new Deno.Command("code", { args: [filePath] });
         await command.output();
-        return new Response('OK');
+        return new Response("OK");
       } catch (error) {
         return new Response(`Error opening file: ${error.message}`, { status: 500 });
       }
     }
-    
-    if (path === '/api/save' && req.method === 'POST') {
+
+    if (path === "/api/save" && req.method === "POST") {
       const body = await req.json();
       const canvasFile = body.file;
       const canvasData = body.canvas;
-      
+
       try {
         // If file already includes the directory path, use it directly
-        const canvasPath = canvasFile.includes('/') ? canvasFile : join(CANVAS_DIR, canvasFile);
+        const canvasPath = canvasFile.includes("/") ? canvasFile : join(CANVAS_DIR, canvasFile);
         const yamlContent = yaml.stringify(canvasData);
         await Deno.writeTextFile(canvasPath, yamlContent);
-        return new Response('OK');
+        return new Response("OK");
       } catch (error) {
         return new Response(`Error saving canvas: ${error.message}`, { status: 500 });
       }
     }
-    
-    return new Response('Not Found', { status: 404 });
+
+    return new Response("Not Found", { status: 404 });
   };
-  
+
   const server = Deno.serve({ port }, handler);
   console.log(`🎨 Self-Managing Canvas Server on http://localhost:${port}`);
   console.log(`📁 Canvas directory: ${CANVAS_DIR}`);
-  console.log(`📄 Default canvas: ${options.file || 'code-canvas-architecture.canvas.yaml'}`);
-  
+  console.log(`📄 Default canvas: ${options.file || "code-canvas-architecture.canvas.yaml"}`);
+
   // Keep server running
   await server.finished;
 }
@@ -1085,7 +1093,7 @@ if (import.meta.main) {
     alias: { h: "help", f: "file", p: "port", w: "watch" },
     default: { watch: true, port: String(DEFAULT_PORT) },
   });
-  
+
   if (args.help) {
     console.log(`
 Self-Managing Canvas Server - Interactive architecture visualization
@@ -1112,7 +1120,7 @@ FEATURES:
     `);
     Deno.exit(0);
   }
-  
+
   await startServer({
     port: parseInt(args.port as string, 10),
     file: args.file as string | undefined,

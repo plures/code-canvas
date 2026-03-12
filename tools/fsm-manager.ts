@@ -1,4 +1,7 @@
-import { parse as parseYaml, stringify as stringifyYaml } from "https://deno.land/std@0.208.0/yaml/mod.ts";
+import {
+  parse as parseYaml,
+  stringify as stringifyYaml,
+} from "https://deno.land/std@0.208.0/yaml/mod.ts";
 import { exists } from "https://deno.land/std@0.208.0/fs/exists.ts";
 import { join } from "https://deno.land/std@0.208.0/path/mod.ts";
 import { parseArgs } from "https://deno.land/std@0.208.0/cli/parse_args.ts";
@@ -49,7 +52,7 @@ export class FSMManager {
   private lifecyclePath: string;
   private activityPath: string;
   private historyPath: string;
-  
+
   constructor(basePath = ".") {
     this.lifecyclePath = join(basePath, "sot", "lifecycle.yaml");
     this.activityPath = join(basePath, "sot", "state", "activity.yaml");
@@ -80,19 +83,22 @@ export class FSMManager {
     await Deno.writeTextFile(this.historyPath, content);
   }
 
-  async validateTransition(from: string, to: string): Promise<{ valid: boolean; errors: string[] }> {
+  async validateTransition(
+    from: string,
+    to: string,
+  ): Promise<{ valid: boolean; errors: string[] }> {
     const lifecycle = await this.loadLifecycle();
     const errors: string[] = [];
 
     // Check if target state exists
-    const targetState = lifecycle.states.find(s => s.id === to);
+    const targetState = lifecycle.states.find((s) => s.id === to);
     if (!targetState) {
       errors.push(`Target state '${to}' does not exist in lifecycle`);
       return { valid: false, errors };
     }
 
     // Check if transition is defined
-    const transition = lifecycle.transitions?.find(t => t.from === from && t.to === to);
+    const transition = lifecycle.transitions?.find((t) => t.from === from && t.to === to);
     if (lifecycle.transitions && !transition) {
       errors.push(`Transition from '${from}' to '${to}' is not allowed by lifecycle configuration`);
     }
@@ -124,51 +130,54 @@ export class FSMManager {
     try {
       // Simple guard condition evaluation
       // Format: "file:path/exists" | "not:file:path" | "git:clean" | "git:staged"
-      
+
       if (condition.startsWith("file:")) {
         const filePath = condition.substring(5);
         const fileExists = await exists(filePath);
         return { success: fileExists };
       }
-      
+
       if (condition.startsWith("not:file:")) {
         const filePath = condition.substring(9);
         const fileExists = await exists(filePath);
         return { success: !fileExists };
       }
-      
+
       if (condition === "git:clean") {
         const gitStatus = await new Deno.Command("git", {
           args: ["status", "--porcelain"],
           stdout: "piped",
-          stderr: "piped"
+          stderr: "piped",
         }).output();
         const output = new TextDecoder().decode(gitStatus.stdout).trim();
         return { success: output === "" };
       }
-      
+
       if (condition === "git:staged") {
         const gitStatus = await new Deno.Command("git", {
           args: ["diff", "--cached", "--name-only"],
           stdout: "piped",
-          stderr: "piped"
+          stderr: "piped",
         }).output();
         const output = new TextDecoder().decode(gitStatus.stdout).trim();
         return { success: output !== "" };
       }
-      
+
       // Default: unknown condition fails
       return { success: false, error: `Unknown guard condition: ${condition}` };
-      
     } catch (error) {
       return { success: false, error: `Guard evaluation failed: ${error.message}` };
     }
   }
 
-  async transitionTo(newActivity: string, actor: string, note: string): Promise<{ success: boolean; errors: string[] }> {
+  async transitionTo(
+    newActivity: string,
+    actor: string,
+    note: string,
+  ): Promise<{ success: boolean; errors: string[] }> {
     const current = await this.loadCurrentActivity();
     const validation = await this.validateTransition(current.activity, newActivity);
-    
+
     if (!validation.valid) {
       // Log failed transition
       const history = await this.loadHistory();
@@ -179,18 +188,20 @@ export class FSMManager {
         actor,
         note,
         success: false,
-        error: validation.errors.join("; ")
+        error: validation.errors.join("; "),
       });
       await this.saveHistory(history);
-      
+
       return { success: false, errors: validation.errors };
     }
 
     try {
       // Execute transition effects
       const lifecycle = await this.loadLifecycle();
-      const transition = lifecycle.transitions?.find(t => t.from === current.activity && t.to === newActivity);
-      
+      const transition = lifecycle.transitions?.find((t) =>
+        t.from === current.activity && t.to === newActivity
+      );
+
       if (transition?.effects) {
         for (const effect of transition.effects) {
           await this.executeEffect(effect);
@@ -202,9 +213,9 @@ export class FSMManager {
         activity: newActivity,
         actor,
         note,
-        since: new Date().toISOString()
+        since: new Date().toISOString(),
       };
-      
+
       const content = stringifyYaml(newState);
       await Deno.writeTextFile(this.activityPath, content);
 
@@ -216,12 +227,11 @@ export class FSMManager {
         to: newActivity,
         actor,
         note,
-        success: true
+        success: true,
       });
       await this.saveHistory(history);
 
       return { success: true, errors: [] };
-      
     } catch (error) {
       return { success: false, errors: [`Transition failed: ${error.message}`] };
     }
@@ -242,8 +252,10 @@ export class FSMManager {
       }
 
       // Find the last successful transition
-      const lastSuccessful = history.slice().reverse().find(h => h.success && h.to !== history[history.length - 1]?.from);
-      
+      const lastSuccessful = history.slice().reverse().find((h) =>
+        h.success && h.to !== history[history.length - 1]?.from
+      );
+
       if (!lastSuccessful) {
         return { success: false, error: "No valid previous state found" };
       }
@@ -254,7 +266,7 @@ export class FSMManager {
         activity: lastSuccessful.to,
         actor: current.actor,
         note: `Rollback from ${current.activity}`,
-        since: new Date().toISOString()
+        since: new Date().toISOString(),
       };
 
       const content = stringifyYaml(rollbackState);
@@ -267,12 +279,11 @@ export class FSMManager {
         to: lastSuccessful.to,
         actor: current.actor,
         note: "Rollback operation",
-        success: true
+        success: true,
       });
       await this.saveHistory(history);
 
       return { success: true };
-      
     } catch (error) {
       return { success: false, error: `Rollback failed: ${error.message}` };
     }
@@ -285,13 +296,13 @@ export class FSMManager {
   async getCurrentState(): Promise<{ activity: ActivityState; valid: boolean; errors: string[] }> {
     const activity = await this.loadCurrentActivity();
     const lifecycle = await this.loadLifecycle();
-    
-    const currentState = lifecycle.states.find(s => s.id === activity.activity);
+
+    const currentState = lifecycle.states.find((s) => s.id === activity.activity);
     if (!currentState) {
       return {
         activity,
         valid: false,
-        errors: [`Current activity '${activity.activity}' is not defined in lifecycle`]
+        errors: [`Current activity '${activity.activity}' is not defined in lifecycle`],
       };
     }
 
@@ -309,7 +320,7 @@ export class FSMManager {
     return {
       activity,
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }
@@ -319,7 +330,7 @@ if (import.meta.main) {
   const args = parseArgs(Deno.args, {
     string: ["to", "actor", "note"],
     boolean: ["rollback", "status", "history", "help"],
-    alias: { h: "help" }
+    alias: { h: "help" },
   });
 
   if (args.help) {
@@ -360,12 +371,12 @@ Examples:
     console.log(`✅ Valid: ${state.valid ? "Yes" : "No"}`);
     if (state.errors.length > 0) {
       console.log(`❌ Issues:`);
-      state.errors.forEach(error => console.log(`   • ${error}`));
+      state.errors.forEach((error) => console.log(`   • ${error}`));
     }
   } else if (args.history) {
     const history = await fsm.getTransitionHistory();
     console.log(`📜 Transition History (${history.length} entries):`);
-    history.slice(-10).forEach(entry => {
+    history.slice(-10).forEach((entry) => {
       const status = entry.success ? "✅" : "❌";
       console.log(`${status} ${entry.timestamp}: ${entry.from} → ${entry.to} (${entry.actor})`);
       console.log(`   ${entry.note}`);
@@ -384,13 +395,13 @@ Examples:
       console.error("❌ --actor and --note are required for transitions");
       Deno.exit(1);
     }
-    
+
     const result = await fsm.transitionTo(args.to, args.actor, args.note);
     if (result.success) {
       console.log(`✅ Successfully transitioned to: ${args.to}`);
     } else {
       console.error(`❌ Transition failed:`);
-      result.errors.forEach(error => console.error(`   • ${error}`));
+      result.errors.forEach((error) => console.error(`   • ${error}`));
       Deno.exit(1);
     }
   } else {

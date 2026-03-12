@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run -A
 /**
  * Canvas Server - Live preview and editing for canvas files
- * 
+ *
  * Provides a web-based interface for:
  * - Live canvas preview with auto-reload
  * - Interactive node manipulation
@@ -54,7 +54,7 @@ const NODE_STYLES = {
   fsm: { fill: "#f3e5f5", stroke: "#4a148c", strokeWidth: 3 },
   control: { fill: "#e8f5e8", stroke: "#1b5e20", strokeWidth: 2 },
   doc: { fill: "#fff3e0", stroke: "#e65100", strokeWidth: 2 },
-  database: { fill: "#fce4ec", stroke: "#880e4f", strokeWidth: 2 }
+  database: { fill: "#fce4ec", stroke: "#880e4f", strokeWidth: 2 },
 };
 
 const EDGE_STYLES = {
@@ -62,14 +62,14 @@ const EDGE_STYLES = {
   guards: { stroke: "#1976d2", strokeDasharray: "10,2" },
   tests: { stroke: "#388e3c", strokeDasharray: "3,3" },
   implements: { stroke: "#f57c00", strokeDasharray: "none" },
-  docs: { stroke: "#7b1fa2", strokeDasharray: "8,4" }
+  docs: { stroke: "#7b1fa2", strokeDasharray: "8,4" },
 };
 
 function renderCanvasToSvg(canvas: Canvas): string {
   // Calculate bounds
   let maxX = 800;
   let maxY = 600;
-  
+
   if (canvas.nodes.length > 0) {
     maxX = 0;
     maxY = 0;
@@ -85,12 +85,12 @@ function renderCanvasToSvg(canvas: Canvas): string {
   const renderNode = (node: CanvasNode): string => {
     const style = NODE_STYLES[node.type] || NODE_STYLES.box;
     const label = node.label || node.id;
-    
+
     return `
     <g class="node node-${node.type}" id="node-${node.id}">
       <rect x="${node.x}" y="${node.y}" width="${node.w}" height="${node.h}"
             fill="${style.fill}" stroke="${style.stroke}" stroke-width="${style.strokeWidth}" rx="5"/>
-      <text x="${node.x + node.w/2}" y="${node.y + node.h/2}" 
+      <text x="${node.x + node.w / 2}" y="${node.y + node.h / 2}" 
             text-anchor="middle" dominant-baseline="middle"
             font-family="Arial, sans-serif" font-size="14" font-weight="600">${label}</text>
     </g>`;
@@ -98,18 +98,20 @@ function renderCanvasToSvg(canvas: Canvas): string {
 
   // Render edges
   const renderEdge = (edge: CanvasEdge): string => {
-    const fromNode = canvas.nodes.find(n => n.id === edge.from);
-    const toNode = canvas.nodes.find(n => n.id === edge.to);
-    if (!fromNode || !toNode) return '';
+    const fromNode = canvas.nodes.find((n) => n.id === edge.from);
+    const toNode = canvas.nodes.find((n) => n.id === edge.to);
+    if (!fromNode || !toNode) return "";
 
     const x1 = fromNode.x + fromNode.w / 2;
     const y1 = fromNode.y + fromNode.h / 2;
     const x2 = toNode.x + toNode.w / 2;
     const y2 = toNode.y + toNode.h / 2;
 
-    const style = EDGE_STYLES[edge.kind || 'implements'];
-    const strokeDashArray = style.strokeDasharray !== 'none' ? `stroke-dasharray="${style.strokeDasharray}"` : '';
-    
+    const style = EDGE_STYLES[edge.kind || "implements"];
+    const strokeDashArray = style.strokeDasharray !== "none"
+      ? `stroke-dasharray="${style.strokeDasharray}"`
+      : "";
+
     // Arrow calculation
     const angle = Math.atan2(y2 - y1, x2 - x1);
     const arrowSize = 10;
@@ -122,18 +124,22 @@ function renderCanvasToSvg(canvas: Canvas): string {
     const labelY = (y1 + y2) / 2 - 5;
 
     return `
-    <g class="edge edge-${edge.kind || 'default'}" id="edge-${edge.from}-${edge.to}">
+    <g class="edge edge-${edge.kind || "default"}" id="edge-${edge.from}-${edge.to}">
       <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" 
             stroke="${style.stroke}" stroke-width="2" ${strokeDashArray}/>
       <polygon points="${x2},${y2} ${arrowX1},${arrowY1} ${arrowX2},${arrowY2}" 
                fill="${style.stroke}"/>
-      ${edge.label ? `<text x="${labelX}" y="${labelY}" text-anchor="middle" 
-                            font-family="Arial, sans-serif" font-size="10" fill="#666">${edge.label}</text>` : ''}
+      ${
+      edge.label
+        ? `<text x="${labelX}" y="${labelY}" text-anchor="middle" 
+                            font-family="Arial, sans-serif" font-size="10" fill="#666">${edge.label}</text>`
+        : ""
+    }
     </g>`;
   };
 
-  const nodes = canvas.nodes.map(renderNode).join('');
-  const edges = canvas.edges.map(renderEdge).join('');
+  const nodes = canvas.nodes.map(renderNode).join("");
+  const edges = canvas.edges.map(renderEdge).join("");
 
   return `<svg width="${maxX}" height="${maxY}" 
      xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -606,44 +612,47 @@ function generateViewerHtml(canvasFile: string, svgContent: string): string {
 // Simple HTTP server
 async function startServer(options: ServerOptions): Promise<void> {
   const { port, file, watch } = options;
-  
+
   console.log(`🚀 Starting Canvas Server on http://localhost:${port}`);
   console.log(`📁 Serving from: ${CANVAS_DIR}`);
-  
+
   if (file) {
     console.log(`📄 Watching: ${file}`);
   }
-  
+
   const handler = async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
-    
+
     // API endpoint for status
     if (url.pathname === "/api/status") {
-      return new Response(JSON.stringify({
-        updated: Date.now(),
-      }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          updated: Date.now(),
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
-    
+
     // Serve canvas viewer
     if (url.pathname === "/" || url.pathname.startsWith("/canvas/")) {
       try {
         const canvasFile = file || "demo.canvas.yaml";
         // Handle both full paths and just filenames
         const canvasPath = canvasFile.includes("/") ? canvasFile : join(CANVAS_DIR, canvasFile);
-        
+
         if (!await exists(canvasPath)) {
           return new Response(`Canvas file not found: ${canvasPath}`, { status: 404 });
         }
-        
+
         // Read and render canvas
         const content = await Deno.readTextFile(canvasPath);
         const canvas = yaml.parse(content) as Canvas;
-        
+
         // Generate SVG from canvas
         const svg = renderCanvasToSvg(canvas);
-        
+
         const html = generateViewerHtml(canvasFile, svg);
         return new Response(html, {
           headers: { "Content-Type": "text/html" },
@@ -653,10 +662,10 @@ async function startServer(options: ServerOptions): Promise<void> {
         return new Response(`Error: ${err.message}`, { status: 500 });
       }
     }
-    
+
     return new Response("Not found", { status: 404 });
   };
-  
+
   Deno.serve({ port }, handler);
 }
 
@@ -668,7 +677,7 @@ if (import.meta.main) {
     alias: { h: "help", f: "file", p: "port", w: "watch" },
     default: { watch: true, port: String(DEFAULT_PORT) },
   });
-  
+
   if (args.help) {
     console.log(`
 Canvas Server - Live preview and editing
@@ -689,7 +698,7 @@ Examples:
 `);
     Deno.exit(0);
   }
-  
+
   await startServer({
     port: parseInt(args.port as string, 10),
     file: args.file as string | undefined,

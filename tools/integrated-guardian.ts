@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run -A
 /**
  * Integrated Guardian using State-Docs and ADP modules
- * 
+ *
  * This tool demonstrates how to use both modules together.
  */
 
@@ -19,7 +19,7 @@ async function main() {
     case "validate": {
       // Get staged files or all changed files
       const files = args.slice(1);
-      
+
       if (files.length === 0) {
         console.log("Usage: integrated-guardian validate <file1> <file2> ...");
         console.log("Or use git to get staged files:");
@@ -83,7 +83,7 @@ async function main() {
 
       const allowed = await stateManager.isPathAllowed(path);
       const activity = await stateManager.getCurrentActivity();
-      
+
       if (allowed) {
         console.log(`✅ Path '${path}' is allowed in activity '${activity.activity}'`);
       } else {

@@ -46,22 +46,23 @@ git commit -m "Add feature"
 ### Programmatic Usage
 
 ```typescript
-import { Guardian } from './modules/adp/mod.ts';
-import { StateDocsManager } from './modules/state-docs/mod.ts';
+import { Guardian } from "./modules/adp/mod.ts";
+import { StateDocsManager } from "./modules/state-docs/mod.ts";
 
-const stateManager = new StateDocsManager('./sot');
+const stateManager = new StateDocsManager("./sot");
 const guardian = new Guardian(stateManager);
 
 // Validate changes
-const result = await guardian.validate(['src/app.ts', 'tests/app.test.ts']);
+const result = await guardian.validate(["src/app.ts", "tests/app.test.ts"]);
 if (!result.valid) {
-  console.error('Validation failed:', result.errors);
+  console.error("Validation failed:", result.errors);
 }
 ```
 
 ### Integration in Code Canvas
 
 ADP is integrated into Code Canvas to enforce FSM-controlled development:
+
 - Validates file access based on current activity
 - Enforces required chores (e.g., tests with src changes)
 - Checks file size limits
@@ -72,6 +73,7 @@ ADP is integrated into Code Canvas to enforce FSM-controlled development:
 ### Guardian
 
 Core validation engine that:
+
 - Checks if changed files are allowed in current activity
 - Verifies required chores are completed
 - Validates project invariants
@@ -81,6 +83,7 @@ Core validation engine that:
 ### FSM Manager
 
 Manages lifecycle state transitions:
+
 - Load and parse lifecycle definitions
 - Validate transition guards
 - Update activity state
@@ -89,6 +92,7 @@ Manages lifecycle state transitions:
 ### Rules Engine
 
 Evaluates validation rules:
+
 - Pattern matching for file paths
 - Content validation
 - Commit size checks
@@ -108,7 +112,7 @@ Files must be in allowed paths for current activity:
 - docs/**
 
 # Cannot modify:
-- src/**  # Only allowed in implementation
+- src/** # Only allowed in implementation
 ```
 
 ### Required Chores
@@ -144,12 +148,14 @@ max_additions: 2500
 ### Dual Support
 
 ADP can be used in two ways:
+
 1. **Internal**: Govern the code-canvas project itself
 2. **External**: Offered as a feature to projects using code-canvas
 
 ### With State-Docs
 
 ADP works with State-Docs to provide complete FSM-controlled development:
+
 - State-Docs: Manages state and lifecycle definitions
 - ADP: Enforces validation and guardrails
 

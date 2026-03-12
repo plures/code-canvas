@@ -18,7 +18,26 @@
     "fsm": "deno run -A tools/fsm-manager.ts",
     "validate-config": "deno run -A tools/schema-validator.ts",
     "test": "deno test --allow-all --no-check tests/",
-    "test-modules": "deno test --allow-all modules/"
+    "test-modules": "deno test --allow-all modules/",
+    "fmt": "deno fmt",
+    "fmt:check": "deno fmt --check",
+    "lint": "deno lint"
+  },
+  "fmt": {
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve",
+    "include": ["tools/", "tests/", "modules/"],
+    "exclude": ["tools/canvas-editor.html"]
+  },
+  "lint": {
+    "include": ["tools/", "tests/", "modules/"],
+    "exclude": ["tools/canvas-editor.html"],
+    "rules": {
+      "tags": ["recommended"]
+    }
   },
   "compilerOptions": {
     "strict": true

@@ -14,39 +14,39 @@ async function renderCanvas(filePath: string, outputDir: string = "output") {
   try {
     const content = await Deno.readTextFile(filePath);
     const canvas = parseYaml(content) as any;
-    
+
     // Detect format and convert if needed
     const format = detectFormat(canvas);
     console.log(`📋 Detected format: ${format}`);
-    
+
     // Use enhanced renderer
     const renderer = new EnhancedCanvasRenderer(canvas);
-    
+
     // Ensure output directory exists
     await Deno.mkdir(outputDir, { recursive: true });
-    
-    const baseName = filePath.replace(/\.canvas\.yaml$/, '').replace(/.*[\/\\]/, '');
-    
+
+    const baseName = filePath.replace(/\.canvas\.yaml$/, "").replace(/.*[\/\\]/, "");
+
     // Render SVG
     const svgPath = `${outputDir}/${baseName}.svg`;
     const svgOutput = renderer.renderSVG();
     await Deno.writeTextFile(svgPath, svgOutput);
     console.log(`✅ SVG: ${svgPath}`);
-    
-    // Render HTML  
+
+    // Render HTML
     const htmlPath = `${outputDir}/${baseName}.html`;
     const htmlOutput = renderer.renderHTML(`Canvas: ${baseName}`);
     await Deno.writeTextFile(htmlPath, htmlOutput);
     console.log(`✅ HTML: ${htmlPath}`);
-    
+
     // Convert to JSON Canvas if it's Code Canvas format
-    if (format === 'codecanvas') {
+    if (format === "codecanvas") {
       const jsonCanvas = codeCanvasToJSONCanvas(canvas);
       const jsonPath = `${outputDir}/${baseName}.canvas`;
       await Deno.writeTextFile(jsonPath, JSON.stringify(jsonCanvas, null, 2));
       console.log(`✅ JSON Canvas: ${jsonPath}`);
     }
-    
+
     return true;
   } catch (error) {
     console.error(`❌ Error rendering ${filePath}:`, (error as Error).message);
@@ -57,20 +57,20 @@ async function renderCanvas(filePath: string, outputDir: string = "output") {
 async function renderAllCanvases(outputDir: string = "output") {
   let success = 0;
   let total = 0;
-  
+
   try {
     for await (const entry of Deno.readDir("sot/canvas")) {
       if (entry.isFile && entry.name.endsWith(".canvas.yaml")) {
         total++;
         const filePath = `sot/canvas/${entry.name}`;
         console.log(`\n🎨 Rendering ${entry.name}...`);
-        
+
         if (await renderCanvas(filePath, outputDir)) {
           success++;
         }
       }
     }
-    
+
     console.log(`\n📊 Rendered ${success}/${total} canvas files`);
     return success === total;
   } catch (error) {
@@ -83,16 +83,16 @@ async function main() {
   const parsed = parseArgs(Deno.args, {
     boolean: ["all", "help", "version"],
     string: ["file", "output", "format"],
-    alias: { 
-      h: "help", 
+    alias: {
+      h: "help",
       v: "version",
-      f: "file", 
+      f: "file",
       o: "output",
-      a: "all"
+      a: "all",
     },
-    default: { 
+    default: {
       output: "output",
-      format: "all"
+      format: "all",
     },
   });
 

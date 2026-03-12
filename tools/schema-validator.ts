@@ -1,14 +1,14 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write
 /**
  * Schema Validation System
- * 
+ *
  * Validates all YAML configuration files against their JSON schemas.
  * Provides comprehensive error reporting and validation summaries.
  */
 
 import { parse as parseYaml } from "https://deno.land/std@0.208.0/yaml/mod.ts";
 import { exists } from "https://deno.land/std@0.208.0/fs/exists.ts";
-import { join, basename } from "https://deno.land/std@0.208.0/path/mod.ts";
+import { basename, join } from "https://deno.land/std@0.208.0/path/mod.ts";
 import { walk } from "https://deno.land/std@0.208.0/fs/walk.ts";
 
 interface ValidationResult {
@@ -30,28 +30,28 @@ export class SchemaValidator {
     {
       pattern: /sot[\/\\]lifecycle\.yaml$/,
       schemaPath: "sot/schemas/lifecycle.schema.yaml",
-      description: "FSM Lifecycle Configuration"
+      description: "FSM Lifecycle Configuration",
     },
     {
       pattern: /sot[\/\\]rules\.yaml$/,
-      schemaPath: "sot/schemas/rules.schema.yaml", 
-      description: "Guardian Rules Configuration"
+      schemaPath: "sot/schemas/rules.schema.yaml",
+      description: "Guardian Rules Configuration",
     },
     {
       pattern: /sot[\/\\]canvas[\/\\].*\.canvas\.yaml$/,
       schemaPath: "sot/schemas/canvas.schema.yaml",
-      description: "Canvas Definition"
+      description: "Canvas Definition",
     },
     {
       pattern: /sot[\/\\]state[\/\\]activity\.yaml$/,
       schemaPath: "sot/schemas/activity.schema.yaml",
-      description: "Current Activity State"
+      description: "Current Activity State",
     },
     {
       pattern: /sot[\/\\]state[\/\\]history\.yaml$/,
       schemaPath: "sot/schemas/history.schema.yaml",
-      description: "State Transition History"
-    }
+      description: "State Transition History",
+    },
   ];
 
   constructor(basePath = ".") {
@@ -63,7 +63,7 @@ export class SchemaValidator {
       file: filePath,
       valid: true,
       errors: [],
-      warnings: []
+      warnings: [],
     };
 
     try {
@@ -77,19 +77,21 @@ export class SchemaValidator {
       // Load and parse YAML
       const content = await Deno.readTextFile(filePath);
       let data: any;
-      
+
       try {
         data = parseYaml(content);
       } catch (yamlError) {
         result.valid = false;
-        result.errors.push(`YAML parsing error: ${yamlError instanceof Error ? yamlError.message : String(yamlError)}`);
+        result.errors.push(
+          `YAML parsing error: ${
+            yamlError instanceof Error ? yamlError.message : String(yamlError)
+          }`,
+        );
         return result;
       }
 
       // Find matching schema
-      const schemaMapping = this.schemaMappings.find(mapping => 
-        mapping.pattern.test(filePath)
-      );
+      const schemaMapping = this.schemaMappings.find((mapping) => mapping.pattern.test(filePath));
 
       if (!schemaMapping) {
         result.warnings.push(`No schema mapping found for file: ${filePath}`);
@@ -97,16 +99,20 @@ export class SchemaValidator {
       }
 
       const schemaPath = join(this.basePath, schemaMapping.schemaPath);
-      
+
       // Load schema if it exists
       if (await exists(schemaPath)) {
         const schemaContent = await Deno.readTextFile(schemaPath);
         let schema: any;
-        
+
         try {
           schema = parseYaml(schemaContent);
         } catch (schemaError) {
-          result.warnings.push(`Schema parsing error: ${schemaError instanceof Error ? schemaError.message : String(schemaError)}`);
+          result.warnings.push(
+            `Schema parsing error: ${
+              schemaError instanceof Error ? schemaError.message : String(schemaError)
+            }`,
+          );
           return result;
         }
 
@@ -124,16 +130,21 @@ export class SchemaValidator {
       result.errors.push(...specificValidation.errors);
       result.warnings.push(...specificValidation.warnings);
       if (!specificValidation.valid) result.valid = false;
-
     } catch (error) {
       result.valid = false;
-      result.errors.push(`Validation error: ${error instanceof Error ? error.message : String(error)}`);
+      result.errors.push(
+        `Validation error: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
 
     return result;
   }
 
-  private validateAgainstSchema(data: any, schema: any, filePath: string): { valid: boolean; errors: string[]; warnings: string[] } {
+  private validateAgainstSchema(
+    data: any,
+    schema: any,
+    filePath: string,
+  ): { valid: boolean; errors: string[]; warnings: string[] } {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -166,35 +177,44 @@ export class SchemaValidator {
           }
         }
       }
-
     } catch (error) {
-      errors.push(`Schema validation error: ${error instanceof Error ? error.message : String(error)}`);
+      errors.push(
+        `Schema validation error: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
 
     return { valid: errors.length === 0, errors, warnings };
   }
 
-  private validateProperty(value: any, schema: any, propName: string): { errors: string[]; warnings: string[] } {
+  private validateProperty(
+    value: any,
+    schema: any,
+    propName: string,
+  ): { errors: string[]; warnings: string[] } {
     const errors: string[] = [];
     const warnings: string[] = [];
 
     if (schema.type) {
       const expectedType = schema.type;
       const actualType = Array.isArray(value) ? "array" : typeof value;
-      
+
       if (expectedType !== actualType) {
         errors.push(`Property '${propName}': expected ${expectedType}, got ${actualType}`);
       }
     }
 
     if (schema.enum && !schema.enum.includes(value)) {
-      errors.push(`Property '${propName}': value '${value}' not in allowed values: ${schema.enum.join(", ")}`);
+      errors.push(
+        `Property '${propName}': value '${value}' not in allowed values: ${schema.enum.join(", ")}`,
+      );
     }
 
     if (schema.pattern && typeof value === "string") {
       const regex = new RegExp(schema.pattern);
       if (!regex.test(value)) {
-        errors.push(`Property '${propName}': value '${value}' does not match pattern ${schema.pattern}`);
+        errors.push(
+          `Property '${propName}': value '${value}' does not match pattern ${schema.pattern}`,
+        );
       }
     }
 
@@ -209,7 +229,10 @@ export class SchemaValidator {
     return { errors, warnings };
   }
 
-  private async performSpecificValidation(filePath: string, data: any): Promise<{ valid: boolean; errors: string[]; warnings: string[] }> {
+  private async performSpecificValidation(
+    filePath: string,
+    data: any,
+  ): Promise<{ valid: boolean; errors: string[]; warnings: string[] }> {
     const errors: string[] = [];
     const warnings: string[] = [];
     let valid = true;
@@ -234,9 +257,10 @@ export class SchemaValidator {
       if (filePath.includes("activity.yaml")) {
         valid = this.validateActivity(data, errors, warnings) && valid;
       }
-
     } catch (error) {
-      errors.push(`Specific validation error: ${error instanceof Error ? error.message : String(error)}`);
+      errors.push(
+        `Specific validation error: ${error instanceof Error ? error.message : String(error)}`,
+      );
       valid = false;
     }
 
@@ -258,7 +282,7 @@ export class SchemaValidator {
     // Validate state transitions
     if (data.transitions && data.states) {
       const stateIds = new Set(data.states.map((state: any) => state.id));
-      
+
       for (const transition of data.transitions) {
         if (!stateIds.has(transition.from)) {
           errors.push(`Transition references unknown 'from' state: ${transition.from}`);
@@ -285,7 +309,7 @@ export class SchemaValidator {
     // Validate node references in edges
     if (data.canvas && data.canvas.edges && data.canvas.nodes) {
       const nodeIds = new Set(data.canvas.nodes.map((node: any) => node.id));
-      
+
       for (const edge of data.canvas.edges) {
         if (!nodeIds.has(edge.from)) {
           errors.push(`Edge references unknown 'from' node: ${edge.from}`);
@@ -301,10 +325,15 @@ export class SchemaValidator {
     // Check for positioning on all nodes
     if (data.canvas && data.canvas.nodes) {
       for (const node of data.canvas.nodes) {
-        if (!node.position || typeof node.position.x !== "number" || typeof node.position.y !== "number") {
+        if (
+          !node.position || typeof node.position.x !== "number" ||
+          typeof node.position.y !== "number"
+        ) {
           warnings.push(`Node '${node.id}' missing or invalid position coordinates`);
         }
-        if (!node.size || typeof node.size.width !== "number" || typeof node.size.height !== "number") {
+        if (
+          !node.size || typeof node.size.width !== "number" || typeof node.size.height !== "number"
+        ) {
           warnings.push(`Node '${node.id}' missing or invalid size dimensions`);
         }
       }
@@ -335,14 +364,18 @@ export class SchemaValidator {
 
     // Find all YAML files in the sot directory
     try {
-      for await (const entry of walk(join(this.basePath, "sot"), { 
-        exts: [".yaml", ".yml"],
-        includeDirs: false 
-      })) {
+      for await (
+        const entry of walk(join(this.basePath, "sot"), {
+          exts: [".yaml", ".yml"],
+          includeDirs: false,
+        })
+      ) {
         yamlFiles.push(entry.path);
       }
     } catch (error) {
-      console.error(`Error scanning for YAML files: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `Error scanning for YAML files: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
 
     // Validate each file
@@ -373,11 +406,11 @@ export class SchemaValidator {
       console.log(`${status} ${fileName}`);
 
       if (result.errors.length > 0) {
-        result.errors.forEach(error => console.log(`   ❌ ${error}`));
+        result.errors.forEach((error) => console.log(`   ❌ ${error}`));
       }
-      
+
       if (result.warnings.length > 0) {
-        result.warnings.forEach(warning => console.log(`   ⚠️  ${warning}`));
+        result.warnings.forEach((warning) => console.log(`   ⚠️  ${warning}`));
       }
     }
 
@@ -399,7 +432,7 @@ if (import.meta.main) {
     const filePath = Deno.args[0];
     const result = await validator.validateFile(filePath);
     validator.printResults([result]);
-    
+
     if (!result.valid) {
       Deno.exit(1);
     }
@@ -407,8 +440,8 @@ if (import.meta.main) {
     // Validate all files
     const results = await validator.validateAll();
     validator.printResults(results);
-    
-    const hasErrors = results.some(r => !r.valid);
+
+    const hasErrors = results.some((r) => !r.valid);
     if (hasErrors) {
       Deno.exit(1);
     }

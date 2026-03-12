@@ -1,6 +1,6 @@
 /**
  * ADP Module - AI Development Pattern
- * 
+ *
  * Provides validation and guardrails for AI-assisted development.
  * Integrates with State-Docs for FSM-controlled workflows.
  */
@@ -70,7 +70,7 @@ export class Guardian {
       if (!allowed) {
         const activity = await this.stateManager.getCurrentActivity();
         errors.push(
-          `File '${file}' is not allowed in current activity '${activity.activity}'`
+          `File '${file}' is not allowed in current activity '${activity.activity}'`,
         );
       }
     }
@@ -86,16 +86,16 @@ export class Guardian {
     const warnings: string[] = [];
 
     const requiredPatterns = await this.stateManager.getRequiredChores(files);
-    
+
     for (const pattern of requiredPatterns) {
-      const hasMatch = files.some(file => {
-        const regex = new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'));
+      const hasMatch = files.some((file) => {
+        const regex = new RegExp(pattern.replace(/\*\*/g, ".*").replace(/\*/g, "[^/]*"));
         return regex.test(file);
       });
 
       if (!hasMatch) {
         errors.push(
-          `Required chore not completed: changes must also include files matching '${pattern}'`
+          `Required chore not completed: changes must also include files matching '${pattern}'`,
         );
       }
     }
@@ -113,26 +113,26 @@ export class Guardian {
     const rules = await this.stateManager.getRules();
 
     for (const invariant of rules.invariants) {
-      if (invariant.check.type === 'file_size') {
+      if (invariant.check.type === "file_size") {
         const patterns = invariant.check.patterns || [];
         const maxLines = invariant.check.max_lines;
         const maxChars = invariant.check.max_chars;
 
         for (const file of files) {
           const matches = patterns.some((pattern: string) => {
-            const regex = new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'));
+            const regex = new RegExp(pattern.replace(/\*\*/g, ".*").replace(/\*/g, "[^/]*"));
             return regex.test(file);
           });
 
           if (matches) {
             try {
               const content = await Deno.readTextFile(file);
-              const lines = content.split('\n').length;
+              const lines = content.split("\n").length;
               const chars = content.length;
 
               if (lines > maxLines || chars > maxChars) {
                 errors.push(
-                  `File '${file}' exceeds size limits: ${lines} lines (max ${maxLines}), ${chars} chars (max ${maxChars})`
+                  `File '${file}' exceeds size limits: ${lines} lines (max ${maxLines}), ${chars} chars (max ${maxChars})`,
                 );
               }
             } catch {
@@ -142,16 +142,16 @@ export class Guardian {
         }
       }
 
-      if (invariant.check.type === 'yaml_syntax') {
+      if (invariant.check.type === "yaml_syntax") {
         const patterns = invariant.check.patterns || [];
 
         for (const file of files) {
           const matches = patterns.some((pattern: string) => {
-            const regex = new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'));
+            const regex = new RegExp(pattern.replace(/\*\*/g, ".*").replace(/\*/g, "[^/]*"));
             return regex.test(file);
           });
 
-          if (matches && file.endsWith('.yaml')) {
+          if (matches && file.endsWith(".yaml")) {
             const result = await this.validateYAML(file);
             if (!result.valid) {
               errors.push(`YAML syntax error in '${file}': ${result.error}`);
@@ -160,9 +160,9 @@ export class Guardian {
         }
       }
 
-      if (invariant.check.type === 'commit_size') {
+      if (invariant.check.type === "commit_size") {
         // This would be checked by the pre-commit hook with git diff stats
-        warnings.push('Commit size check requires git diff information');
+        warnings.push("Commit size check requires git diff information");
       }
     }
 
@@ -184,7 +184,7 @@ export class Guardian {
     const warnings: string[] = [];
 
     const rules = await this.stateManager.getRules();
-    const sizeInvariant = rules.invariants.find(inv => inv.check.type === 'commit_size');
+    const sizeInvariant = rules.invariants.find((inv) => inv.check.type === "commit_size");
 
     if (sizeInvariant) {
       const maxFiles = sizeInvariant.check.max_files;
@@ -192,13 +192,13 @@ export class Guardian {
 
       if (commit.files.length > maxFiles) {
         errors.push(
-          `Commit has ${commit.files.length} files, exceeds limit of ${maxFiles}`
+          `Commit has ${commit.files.length} files, exceeds limit of ${maxFiles}`,
         );
       }
 
       if (commit.additions > maxAdditions) {
         errors.push(
-          `Commit has ${commit.additions} additions, exceeds limit of ${maxAdditions}`
+          `Commit has ${commit.additions} additions, exceeds limit of ${maxAdditions}`,
         );
       }
     }
@@ -241,11 +241,11 @@ export class FSMManager {
     const current = await this.stateManager.getCurrentActivity();
     const validation = await this.stateManager.validateTransition(
       current.activity,
-      newActivity
+      newActivity,
     );
 
     if (!validation.valid) {
-      errors.push(validation.reason || 'Transition not allowed');
+      errors.push(validation.reason || "Transition not allowed");
       return { valid: false, errors, warnings };
     }
 
@@ -261,8 +261,8 @@ export class FSMManager {
     const lifecycle = await this.stateManager.getLifecycle();
 
     return lifecycle.transitions
-      .filter(t => t.from === current.activity)
-      .map(t => t.to);
+      .filter((t) => t.from === current.activity)
+      .map((t) => t.to);
   }
 }
 
@@ -274,7 +274,7 @@ export class RulesEngine {
    * Match file path against pattern
    */
   static matchPattern(pattern: string, path: string): boolean {
-    const regex = new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'));
+    const regex = new RegExp(pattern.replace(/\*\*/g, ".*").replace(/\*/g, "[^/]*"));
     return regex.test(path);
   }
 
@@ -282,15 +282,13 @@ export class RulesEngine {
    * Check if files match any pattern
    */
   static matchesAny(patterns: string[], files: string[]): boolean {
-    return files.some(file =>
-      patterns.some(pattern => this.matchPattern(pattern, file))
-    );
+    return files.some((file) => patterns.some((pattern) => this.matchPattern(pattern, file)));
   }
 
   /**
    * Get matching files for pattern
    */
   static getMatches(pattern: string, files: string[]): string[] {
-    return files.filter(file => this.matchPattern(pattern, file));
+    return files.filter((file) => this.matchPattern(pattern, file));
   }
 }

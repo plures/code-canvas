@@ -1,9 +1,9 @@
 #!/usr/bin/env -S deno run -A
 /**
  * Code Canvas CLI - Enhanced version with JSON Canvas support
- * 
+ *
  * Provides intuitive commands for all Code Canvas operations:
- * - canvas: Render and manage visual documentation  
+ * - canvas: Render and manage visual documentation
  * - activity: Switch and manage FSM states
  * - validate: Check and auto-fix project rules
  * - init: Initialize new projects
@@ -29,17 +29,17 @@ interface CLIArgs {
 // Main canvas render function using enhanced renderer
 async function canvasRenderEnhanced(args: CLIArgs): Promise<number> {
   const cmd = ["deno", "run", "-A", "tools/canvas-render.ts"];
-  
+
   if (args.all) cmd.push("--all");
   if (args.file) cmd.push("--file", args.file);
   if (args.output) cmd.push("--output", args.output);
   if (args.format) cmd.push("--format", args.format);
-  
+
   try {
     const process = new Deno.Command(cmd[0], {
       args: cmd.slice(1),
       stdin: "inherit",
-      stdout: "inherit", 
+      stdout: "inherit",
       stderr: "inherit",
     });
     const { code } = await process.output();
@@ -53,11 +53,11 @@ async function canvasRenderEnhanced(args: CLIArgs): Promise<number> {
 // Legacy canvas render function
 async function canvasRenderLegacy(args: CLIArgs): Promise<number> {
   const cmd = ["deno", "run", "-A", "tools/canvas-renderer.ts"];
-  
+
   if (args.all) cmd.push("--all");
   if (args.file) cmd.push("--file", args.file);
   if (args.output) cmd.push("--output", args.output);
-  
+
   try {
     const process = new Deno.Command(cmd[0], {
       args: cmd.slice(1),
@@ -103,8 +103,9 @@ Examples:
   }
 
   // Use enhanced renderer by default or if specifically requested
-  const useEnhanced = parsed.enhanced || parsed.jsoncanvas || parsed.format === "html" || parsed.format === "json";
-  
+  const useEnhanced = parsed.enhanced || parsed.jsoncanvas || parsed.format === "html" ||
+    parsed.format === "json";
+
   if (useEnhanced) {
     return await canvasRenderEnhanced(parsed);
   } else {
@@ -114,7 +115,7 @@ Examples:
 
 async function canvasList(): Promise<number> {
   console.log("📄 Canvas files:\n");
-  
+
   try {
     for await (const entry of Deno.readDir("sot/canvas")) {
       if (entry.isFile && entry.name.endsWith(".canvas.yaml")) {
@@ -196,7 +197,7 @@ Examples:
   }
 
   const cmd = ["deno", "run", "-A", "tools/fsm-manager.ts", "switch", ...parsed._];
-  
+
   try {
     const process = new Deno.Command(cmd[0], { args: cmd.slice(1) });
     const { code } = await process.output();
@@ -210,7 +211,7 @@ Examples:
 async function activityStatus(): Promise<number> {
   try {
     const process = new Deno.Command("deno", {
-      args: ["run", "-A", "tools/fsm-manager.ts", "status"]
+      args: ["run", "-A", "tools/fsm-manager.ts", "status"],
     });
     const { code } = await process.output();
     return code;
@@ -223,7 +224,7 @@ async function activityStatus(): Promise<number> {
 async function activityList(): Promise<number> {
   try {
     const process = new Deno.Command("deno", {
-      args: ["run", "-A", "tools/fsm-manager.ts", "list"]
+      args: ["run", "-A", "tools/fsm-manager.ts", "list"],
     });
     const { code } = await process.output();
     return code;
@@ -263,7 +264,7 @@ Examples:
 
   try {
     const process = new Deno.Command(cmd[0], {
-      args: cmd.slice(1)
+      args: cmd.slice(1),
     });
     const { code } = await process.output();
     return code;
@@ -303,11 +304,11 @@ Examples:
 
   const directories = [
     "sot/canvas",
-    "sot/instructions", 
+    "sot/instructions",
     "sot/schemas",
     "sot/state",
     "tools",
-    "tests"
+    "tests",
   ];
 
   try {
@@ -334,14 +335,17 @@ Examples:
 // Main command router
 async function main() {
   const args = Deno.args;
-  
-  // Global flags  
+
+  // Global flags
   if (args.includes("--version") || args.includes("-v")) {
     console.log(`Code Canvas CLI v${VERSION}`);
     Deno.exit(0);
   }
-  
-  if (args.length === 0 || (args.includes("--help") && args.length === 1) || (args.includes("-h") && args.length === 1)) {
+
+  if (
+    args.length === 0 || (args.includes("--help") && args.length === 1) ||
+    (args.includes("-h") && args.length === 1)
+  ) {
     console.log(`Code Canvas CLI v${VERSION}
 
 A unified interface for visual software documentation and architecture management.
@@ -400,7 +404,7 @@ For detailed help on any command, use: cli <command> --help
             exitCode = 1;
         }
         break;
-        
+
       case "activity":
         switch (subcommand) {
           case "switch":
@@ -418,15 +422,15 @@ For detailed help on any command, use: cli <command> --help
             exitCode = 1;
         }
         break;
-        
+
       case "validate":
         exitCode = await validateRules([subcommand, ...rest]);
         break;
-        
+
       case "init":
         exitCode = await initProject([subcommand, ...rest]);
         break;
-        
+
       default:
         console.error(`❌ Unknown command: ${command}`);
         console.error("Available commands: canvas, activity, validate, init");
