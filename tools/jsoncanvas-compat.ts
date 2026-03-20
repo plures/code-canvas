@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run -A
 /**
  * JSON Canvas Compatibility Layer
- * 
+ *
  * Provides conversion between Code Canvas YAML format and JSON Canvas standard format.
  * Supports both directions while preserving semantic information where possible.
  */
@@ -15,14 +15,14 @@ export interface JSONCanvasNode {
   width: number;
   height: number;
   color?: string;
-  
+
   // Type-specific properties
-  text?: string;           // text nodes
-  file?: string;           // file nodes
-  subpath?: string;        // file nodes
-  url?: string;            // link nodes
-  label?: string;          // group nodes
-  background?: string;     // group nodes
+  text?: string; // text nodes
+  file?: string; // file nodes
+  subpath?: string; // file nodes
+  url?: string; // link nodes
+  label?: string; // group nodes
+  background?: string; // group nodes
   backgroundStyle?: "cover" | "ratio" | "repeat"; // group nodes
 }
 
@@ -52,19 +52,19 @@ export interface ExtendedCanvasNode {
   width: number;
   height: number;
   color?: string;
-  
+
   // JSON Canvas type-specific properties
-  text?: string;           // text nodes
-  file?: string;           // file nodes
-  subpath?: string;        // file nodes
-  url?: string;            // link nodes
-  label?: string;          // group nodes or display name
-  background?: string;     // group nodes
+  text?: string; // text nodes
+  file?: string; // file nodes
+  subpath?: string; // file nodes
+  url?: string; // link nodes
+  label?: string; // group nodes or display name
+  background?: string; // group nodes
   backgroundStyle?: "cover" | "ratio" | "repeat"; // group nodes
-  
+
   // Code Canvas extensions
-  w?: number;              // backward compatibility
-  h?: number;              // backward compatibility
+  w?: number; // backward compatibility
+  h?: number; // backward compatibility
   props?: Record<string, unknown>;
   ref?: string;
 }
@@ -79,10 +79,10 @@ export interface ExtendedCanvasEdge {
   toEnd?: "none" | "arrow";
   color?: string;
   label?: string;
-  
-  // Code Canvas extensions  
-  from?: string;           // backward compatibility
-  to?: string;             // backward compatibility
+
+  // Code Canvas extensions
+  from?: string; // backward compatibility
+  to?: string; // backward compatibility
   kind?: "triggers" | "guards" | "tests" | "implements" | "docs";
 }
 
@@ -122,7 +122,7 @@ export interface CodeCanvas {
 export function codeCanvasToJSONCanvas(codeCanvas: CodeCanvas): JSONCanvas {
   const nodes: JSONCanvasNode[] = codeCanvas.nodes.map((node, index) => {
     let jsonNode: JSONCanvasNode;
-    
+
     // Convert semantic types to JSON Canvas types
     switch (node.type) {
       case "doc":
@@ -137,7 +137,7 @@ export function codeCanvasToJSONCanvas(codeCanvas: CodeCanvas): JSONCanvas {
         };
         if (node.label) jsonNode.label = node.label;
         break;
-        
+
       case "fsm":
       case "control":
       case "database":
@@ -153,24 +153,24 @@ export function codeCanvasToJSONCanvas(codeCanvas: CodeCanvas): JSONCanvas {
           y: node.y,
           width: node.w,
           height: node.h,
-          text: `**${typeLabel}**\n\n${content}${node.ref ? `\n\nRef: ${node.ref}` : ''}`,
+          text: `**${typeLabel}**\n\n${content}${node.ref ? `\n\nRef: ${node.ref}` : ""}`,
         };
-        
+
         // Add semantic color coding
         const colorMap: Record<string, string> = {
-          fsm: "6",      // purple
-          control: "4",  // green  
+          fsm: "6", // purple
+          control: "4", // green
           database: "1", // red
-          doc: "2",      // orange
-          box: "5"       // cyan
+          doc: "2", // orange
+          box: "5", // cyan
         };
         jsonNode.color = colorMap[node.type] || "5";
         break;
     }
-    
+
     return jsonNode;
   });
-  
+
   const edges: JSONCanvasEdge[] = codeCanvas.edges.map((edge, index) => ({
     id: `edge-${index}`,
     fromNode: edge.from,
@@ -179,15 +179,17 @@ export function codeCanvasToJSONCanvas(codeCanvas: CodeCanvas): JSONCanvas {
     toEnd: "arrow",
     fromEnd: "none",
     // Map semantic edge types to colors
-    color: edge.kind ? {
-      triggers: "1",    // red
-      guards: "4",      // green
-      tests: "3",       // yellow
-      implements: "2",  // orange
-      docs: "6"         // purple
-    }[edge.kind] || "5" : "5"
+    color: edge.kind
+      ? {
+        triggers: "1", // red
+        guards: "4", // green
+        tests: "3", // yellow
+        implements: "2", // orange
+        docs: "6", // purple
+      }[edge.kind] || "5"
+      : "5",
   }));
-  
+
   return { nodes, edges };
 }
 
@@ -195,9 +197,9 @@ export function codeCanvasToJSONCanvas(codeCanvas: CodeCanvas): JSONCanvas {
  * Convert JSON Canvas to Code Canvas format (with information loss)
  */
 export function jsonCanvasToCodeCanvas(jsonCanvas: JSONCanvas): CodeCanvas {
-  const nodes: CodeCanvasNode[] = jsonCanvas.nodes.map(node => {
+  const nodes: CodeCanvasNode[] = jsonCanvas.nodes.map((node) => {
     let codeNode: CodeCanvasNode;
-    
+
     // Convert JSON Canvas types to semantic types
     switch (node.type) {
       case "file":
@@ -212,7 +214,7 @@ export function jsonCanvasToCodeCanvas(jsonCanvas: JSONCanvas): CodeCanvas {
           ref: node.file,
         };
         break;
-        
+
       case "link":
         codeNode = {
           id: node.id,
@@ -225,7 +227,7 @@ export function jsonCanvasToCodeCanvas(jsonCanvas: JSONCanvas): CodeCanvas {
           props: { url: node.url },
         };
         break;
-        
+
       case "group":
         codeNode = {
           id: node.id,
@@ -235,35 +237,37 @@ export function jsonCanvasToCodeCanvas(jsonCanvas: JSONCanvas): CodeCanvas {
           w: node.width,
           h: node.height,
           label: node.label,
-          props: { 
+          props: {
             isGroup: true,
             background: node.background,
-            backgroundStyle: node.backgroundStyle
+            backgroundStyle: node.backgroundStyle,
           },
         };
         break;
-        
+
       case "text":
       default:
         // Try to detect semantic type from text content
         const text = node.text || "";
         let detectedType: CodeCanvasNode["type"] = "box";
-        
+
         if (text.includes("**FSM**") || text.includes("State")) {
           detectedType = "fsm";
-        } else if (text.includes("**CONTROL**") || text.includes("Button") || text.includes("Input")) {
+        } else if (
+          text.includes("**CONTROL**") || text.includes("Button") || text.includes("Input")
+        ) {
           detectedType = "control";
         } else if (text.includes("**DATABASE**") || text.includes("DB") || text.includes("Store")) {
           detectedType = "database";
         } else if (text.includes("**DOC**") || text.includes("Design") || text.includes("Spec")) {
           detectedType = "doc";
         }
-        
+
         // Extract label from markdown text
-        const lines = text.split('\n').filter(l => l.trim());
-        const firstLine = lines[0]?.replace(/\*\*/g, '').trim() || node.id;
+        const lines = text.split("\n").filter((l) => l.trim());
+        const firstLine = lines[0]?.replace(/\*\*/g, "").trim() || node.id;
         const label = lines[1]?.trim() || firstLine;
-        
+
         codeNode = {
           id: node.id,
           type: detectedType,
@@ -273,7 +277,7 @@ export function jsonCanvasToCodeCanvas(jsonCanvas: JSONCanvas): CodeCanvas {
           h: node.height,
           label: label !== node.id ? label : undefined,
         };
-        
+
         // Extract ref from text
         const refMatch = text.match(/Ref: (.+)/);
         if (refMatch) {
@@ -281,24 +285,24 @@ export function jsonCanvasToCodeCanvas(jsonCanvas: JSONCanvas): CodeCanvas {
         }
         break;
     }
-    
+
     return codeNode;
   });
-  
-  const edges: CodeCanvasEdge[] = jsonCanvas.edges.map(edge => {
+
+  const edges: CodeCanvasEdge[] = jsonCanvas.edges.map((edge) => {
     // Try to detect semantic edge type from color or label
     let kind: CodeCanvasEdge["kind"];
     if (edge.color) {
       const kindMap: Record<string, CodeCanvasEdge["kind"]> = {
         "1": "triggers",
-        "2": "implements", 
+        "2": "implements",
         "3": "tests",
         "4": "guards",
-        "6": "docs"
+        "6": "docs",
       };
       kind = kindMap[edge.color];
     }
-    
+
     // Detect from label
     if (!kind && edge.label) {
       const label = edge.label.toLowerCase();
@@ -308,7 +312,7 @@ export function jsonCanvasToCodeCanvas(jsonCanvas: JSONCanvas): CodeCanvas {
       else if (label.includes("implement")) kind = "implements";
       else if (label.includes("doc")) kind = "docs";
     }
-    
+
     return {
       from: edge.fromNode,
       to: edge.toNode,
@@ -316,24 +320,24 @@ export function jsonCanvasToCodeCanvas(jsonCanvas: JSONCanvas): CodeCanvas {
       kind,
     };
   });
-  
+
   return { nodes, edges };
 }
 
 /**
  * Detect whether a canvas is in JSON Canvas or Code Canvas format
  */
-export function detectFormat(canvas: any): 'jsoncanvas' | 'codecanvas' {
-  return isJSONCanvasFormat(canvas) ? 'jsoncanvas' : 'codecanvas';
+export function detectFormat(canvas: any): "jsoncanvas" | "codecanvas" {
+  return isJSONCanvasFormat(canvas) ? "jsoncanvas" : "codecanvas";
 }
 
 /**
  * Normalize canvas to extended format (supports both JSON Canvas and Code Canvas features)
  */
 export function normalizeCanvas(canvas: CodeCanvas | JSONCanvas | ExtendedCanvas): ExtendedCanvas {
-  const nodes: ExtendedCanvasNode[] = canvas.nodes.map(node => {
+  const nodes: ExtendedCanvasNode[] = canvas.nodes.map((node) => {
     // Handle legacy Code Canvas format
-    if ('w' in node && 'h' in node) {
+    if ("w" in node && "h" in node) {
       const legacyNode = node as CodeCanvasNode;
       return {
         ...legacyNode,
@@ -342,18 +346,18 @@ export function normalizeCanvas(canvas: CodeCanvas | JSONCanvas | ExtendedCanvas
         type: legacyNode.type as ExtendedCanvasNode["type"],
       };
     }
-    
+
     // Handle standard JSON Canvas format or already extended
     return {
       ...node,
-      w: node.width,  // Add backward compatibility
+      w: node.width, // Add backward compatibility
       h: node.height,
     } as ExtendedCanvasNode;
   });
-  
-  const edges: ExtendedCanvasEdge[] = canvas.edges.map(edge => {
-    // Handle legacy Code Canvas format  
-    if ('from' in edge && 'to' in edge && !('fromNode' in edge)) {
+
+  const edges: ExtendedCanvasEdge[] = canvas.edges.map((edge) => {
+    // Handle legacy Code Canvas format
+    if ("from" in edge && "to" in edge && !("fromNode" in edge)) {
       const legacyEdge = edge as CodeCanvasEdge;
       return {
         id: `${legacyEdge.from}-${legacyEdge.to}`,
@@ -361,21 +365,21 @@ export function normalizeCanvas(canvas: CodeCanvas | JSONCanvas | ExtendedCanvas
         toNode: legacyEdge.to,
         label: legacyEdge.label,
         kind: legacyEdge.kind,
-        from: legacyEdge.from,  // Backward compatibility
+        from: legacyEdge.from, // Backward compatibility
         to: legacyEdge.to,
         toEnd: "arrow",
         fromEnd: "none",
       };
     }
-    
+
     // Handle standard JSON Canvas format or already extended
     return {
       ...edge,
-      from: edge.fromNode,    // Add backward compatibility
+      from: edge.fromNode, // Add backward compatibility
       to: edge.toNode,
     } as ExtendedCanvasEdge;
   });
-  
+
   return { nodes, edges };
 }
 
@@ -385,20 +389,20 @@ export function normalizeCanvas(canvas: CodeCanvas | JSONCanvas | ExtendedCanvas
 export function isJSONCanvasFormat(canvas: any): canvas is JSONCanvas {
   if (!canvas.nodes || !Array.isArray(canvas.nodes)) return false;
   if (canvas.nodes.length === 0) return true;
-  
+
   const firstNode = canvas.nodes[0];
-  return 'width' in firstNode && 'height' in firstNode && 
-         ['text', 'file', 'link', 'group'].includes(firstNode.type);
+  return "width" in firstNode && "height" in firstNode &&
+    ["text", "file", "link", "group"].includes(firstNode.type);
 }
 
 /**
- * Check if canvas uses Code Canvas format  
+ * Check if canvas uses Code Canvas format
  */
 export function isCodeCanvasFormat(canvas: any): canvas is CodeCanvas {
   if (!canvas.nodes || !Array.isArray(canvas.nodes)) return false;
   if (canvas.nodes.length === 0) return true;
-  
+
   const firstNode = canvas.nodes[0];
-  return 'w' in firstNode && 'h' in firstNode &&
-         ['box', 'fsm', 'control', 'doc', 'database'].includes(firstNode.type);
+  return "w" in firstNode && "h" in firstNode &&
+    ["box", "fsm", "control", "doc", "database"].includes(firstNode.type);
 }

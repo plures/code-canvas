@@ -60,7 +60,7 @@ const NODE_STYLES = {
   text: { fill: "#fff3e0", stroke: "#e65100", strokeWidth: 2 },
   file: { fill: "#e8f5e8", stroke: "#1b5e20", strokeWidth: 2 },
   link: { fill: "#e1f5fe", stroke: "#01579b", strokeWidth: 2 },
-  group: { fill: "#f5f5f5", stroke: "#757575", strokeWidth: 1 }
+  group: { fill: "#f5f5f5", stroke: "#757575", strokeWidth: 1 },
 };
 
 const EDGE_STYLES = {
@@ -68,14 +68,14 @@ const EDGE_STYLES = {
   guards: { stroke: "#1976d2", dash: "10,2" },
   tests: { stroke: "#388e3c", dash: "3,3" },
   implements: { stroke: "#f57c00", dash: "none" },
-  docs: { stroke: "#7b1fa2", dash: "8,4" }
+  docs: { stroke: "#7b1fa2", dash: "8,4" },
 };
 
 function renderCanvasToSvg(canvas: Canvas): string {
   let maxX = 800, maxY = 600;
   if (canvas.nodes.length > 0) {
-    maxX = Math.max(...canvas.nodes.map(n => n.x + (n.w || n.width || 120))) + 40;
-    maxY = Math.max(...canvas.nodes.map(n => n.y + (n.h || n.height || 60))) + 40;
+    maxX = Math.max(...canvas.nodes.map((n) => n.x + (n.w || n.width || 120))) + 40;
+    maxY = Math.max(...canvas.nodes.map((n) => n.y + (n.h || n.height || 60))) + 40;
   }
 
   const renderNode = (node: CanvasNode) => {
@@ -84,11 +84,11 @@ function renderCanvasToSvg(canvas: Canvas): string {
     const width = node.w || node.width || 120;
     const height = node.h || node.height || 60;
     const fill = node.color || style.fill;
-    
+
     return `<g class="node node-${node.type}" id="node-${node.id}" data-x="${node.x}" data-y="${node.y}" data-w="${width}" data-h="${height}">
       <rect x="${node.x}" y="${node.y}" width="${width}" height="${height}"
             fill="${fill}" stroke="${style.stroke}" stroke-width="${style.strokeWidth}" rx="5"/>
-      <text x="${node.x + width/2}" y="${node.y + height/2}" 
+      <text x="${node.x + width / 2}" y="${node.y + height / 2}" 
             text-anchor="middle" dominant-baseline="middle"
             font-family="Arial" font-size="14" font-weight="600" data-node-id="${node.id}">${label}</text>
       <!-- Resize handles -->
@@ -97,35 +97,35 @@ function renderCanvasToSvg(canvas: Canvas): string {
       <rect class="resize-handle corner se" data-node-id="${node.id}" data-handle="se"
             x="${node.x + width - 4}" y="${node.y + height - 4}" width="8" height="8" rx="1"/>
       <rect class="resize-handle edge-right" data-node-id="${node.id}" data-handle="e"
-            x="${node.x + width - 4}" y="${node.y + height/2 - 4}" width="8" height="8" rx="1"/>
+            x="${node.x + width - 4}" y="${node.y + height / 2 - 4}" width="8" height="8" rx="1"/>
       <rect class="resize-handle edge-bottom" data-node-id="${node.id}" data-handle="s"
-            x="${node.x + width/2 - 4}" y="${node.y + height - 4}" width="8" height="8" rx="1"/>
+            x="${node.x + width / 2 - 4}" y="${node.y + height - 4}" width="8" height="8" rx="1"/>
     </g>`;
   };
 
   const renderEdge = (edge: CanvasEdge, index: number) => {
     const fromId = edge.from || edge.fromNode;
     const toId = edge.to || edge.toNode;
-    const from = canvas.nodes.find(n => n.id === fromId);
-    const to = canvas.nodes.find(n => n.id === toId);
-    if (!from || !to) return '';
+    const from = canvas.nodes.find((n) => n.id === fromId);
+    const to = canvas.nodes.find((n) => n.id === toId);
+    if (!from || !to) return "";
 
     const fromWidth = from.w || from.width || 120;
     const fromHeight = from.h || from.height || 60;
     const toWidth = to.w || to.width || 120;
     const toHeight = to.h || to.height || 60;
-    
+
     // Calculate center points first
     const fromCenterX = from.x + fromWidth / 2;
     const fromCenterY = from.y + fromHeight / 2;
     const toCenterX = to.x + toWidth / 2;
     const toCenterY = to.y + toHeight / 2;
-    
+
     // Calculate connection points on node borders
     const dx = toCenterX - fromCenterX;
     const dy = toCenterY - fromCenterY;
     const angle = Math.atan2(dy, dx);
-    
+
     // From node border connection point
     let x1, y1;
     if (Math.abs(dx) > Math.abs(dy)) {
@@ -137,7 +137,7 @@ function renderCanvasToSvg(canvas: Canvas): string {
       x1 = fromCenterX + (dx / Math.abs(dy)) * (fromHeight / 2);
       y1 = dy > 0 ? from.y + fromHeight : from.y;
     }
-    
+
     // To node border connection point
     let x2, y2;
     if (Math.abs(dx) > Math.abs(dy)) {
@@ -149,10 +149,10 @@ function renderCanvasToSvg(canvas: Canvas): string {
       x2 = toCenterX - (dx / Math.abs(dy)) * (toHeight / 2);
       y2 = dy > 0 ? to.y : to.y + toHeight;
     }
-    
-    const style = EDGE_STYLES[edge.kind || 'implements'];
-    const dashAttr = style.dash !== 'none' ? `stroke-dasharray="${style.dash}"` : '';
-    
+
+    const style = EDGE_STYLES[edge.kind || "implements"];
+    const dashAttr = style.dash !== "none" ? `stroke-dasharray="${style.dash}"` : "";
+
     // Calculate arrow head
     const arrowAngle = Math.atan2(y2 - y1, x2 - x1);
     const size = 10;
@@ -161,8 +161,10 @@ function renderCanvasToSvg(canvas: Canvas): string {
     const ax2 = x2 - size * Math.cos(arrowAngle + Math.PI / 6);
     const ay2 = y2 - size * Math.sin(arrowAngle + Math.PI / 6);
 
-    return `<g class="edge edge-${edge.kind || 'default'}" id="edge-${fromId}-${toId}" 
-               data-from="${fromId}" data-to="${toId}" data-kind="${edge.kind || 'implements'}" data-edge-index="${index}">
+    return `<g class="edge edge-${edge.kind || "default"}" id="edge-${fromId}-${toId}" 
+               data-from="${fromId}" data-to="${toId}" data-kind="${
+      edge.kind || "implements"
+    }" data-edge-index="${index}">
       <!-- Invisible clickable line with larger hit area -->
       <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(0,0,0,0)" stroke-width="12"/>
       <!-- Visual line -->
@@ -174,12 +176,17 @@ function renderCanvasToSvg(canvas: Canvas): string {
               data-edge-index="${index}" data-point="from" stroke="none"/>
       <circle class="connection-point to-point" cx="${x2}" cy="${y2}" r="4" fill="rgba(0,100,200,0)" 
               data-edge-index="${index}" data-point="to" stroke="none"/>
-      ${edge.label ? `<text x="${(x1+x2)/2}" y="${(y1+y2)/2-5}" text-anchor="middle" 
-                            font-size="10" fill="#666" data-edge-label="true">${edge.label}</text>` : ''}
+      ${
+      edge.label
+        ? `<text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 - 5}" text-anchor="middle" 
+                            font-size="10" fill="#666" data-edge-label="true">${edge.label}</text>`
+        : ""
+    }
     </g>`;
   };
 
-  const gridPattern = `<pattern id="grid" width="${GRID_SIZE}" height="${GRID_SIZE}" patternUnits="userSpaceOnUse">
+  const gridPattern =
+    `<pattern id="grid" width="${GRID_SIZE}" height="${GRID_SIZE}" patternUnits="userSpaceOnUse">
     <path d="M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}" fill="none" stroke="#e0e0e0" stroke-width="0.5"/>
   </pattern>`;
 
@@ -203,8 +210,8 @@ function renderCanvasToSvg(canvas: Canvas): string {
     </style>
   </defs>
   <rect width="100%" height="100%" fill="url(#grid)"/>
-  ${canvas.nodes.map(renderNode).join('')}
-  ${canvas.edges.map((edge, index) => renderEdge(edge, index)).join('')}
+  ${canvas.nodes.map(renderNode).join("")}
+  ${canvas.edges.map((edge, index) => renderEdge(edge, index)).join("")}
 </svg>`;
 }
 
@@ -212,56 +219,56 @@ async function startServer(options: ServerOptions): Promise<void> {
   const { port, file } = options;
   let canvasData: Canvas = { nodes: [], edges: [] };
   let lastModified = Date.now();
-  
+
   console.log(`🚀 Canvas Editor on http://localhost:${port}`);
   console.log(`📁 Serving from: ${CANVAS_DIR}`);
   if (file) console.log(`📄 Editing: ${file}`);
-  
+
   const handler = async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
-    
+
     if (url.pathname === "/api/status") {
       return new Response(JSON.stringify({ updated: lastModified }), {
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
     }
-    
+
     if (url.pathname === "/api/canvas" && req.method === "GET") {
       return new Response(JSON.stringify(canvasData), {
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
     }
-    
+
     if (url.pathname === "/api/canvas" && req.method === "POST") {
       try {
         const updated = await req.json() as Canvas;
         canvasData = updated;
         lastModified = Date.now();
-        
+
         const canvasFile = file || "demo.canvas.yaml";
         const canvasPath = canvasFile.includes("/") ? canvasFile : join(CANVAS_DIR, canvasFile);
         await Deno.writeTextFile(canvasPath, yaml.stringify(canvasData));
-        
+
         return new Response(JSON.stringify({ success: true }), {
-          headers: { "Content-Type": "application/json" }
+          headers: { "Content-Type": "application/json" },
         });
       } catch (error) {
         return new Response(JSON.stringify({ error: (error as Error).message }), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { "Content-Type": "application/json" },
         });
       }
     }
-    
+
     if (url.pathname === "/" || url.pathname.startsWith("/canvas/")) {
       try {
         const canvasFile = file || "demo.canvas.yaml";
         const canvasPath = canvasFile.includes("/") ? canvasFile : join(CANVAS_DIR, canvasFile);
-        
+
         if (!await exists(canvasPath)) {
           return new Response(`Canvas file not found: ${canvasPath}`, { status: 404 });
         }
-        
+
         const content = await Deno.readTextFile(canvasPath);
         canvasData = yaml.parse(content) as Canvas;
         const svg = renderCanvasToSvg(canvasData);
@@ -270,9 +277,9 @@ async function startServer(options: ServerOptions): Promise<void> {
           .replaceAll("{{CANVAS_FILE}}", canvasFile)
           .replaceAll("{{SVG_CONTENT}}", svg)
           .replaceAll("{{GRID_SIZE}}", String(GRID_SIZE));
-        
+
         return new Response(finalHtml, {
-          headers: { "Content-Type": "text/html" }
+          headers: { "Content-Type": "text/html" },
         });
       } catch (error) {
         return new Response(`Error: ${(error as Error).message}`, { status: 500 });
@@ -282,15 +289,15 @@ async function startServer(options: ServerOptions): Promise<void> {
     // Log endpoint for client-side logs
     if (url.pathname === "/api/log" && req.method === "POST") {
       const logData = await req.json();
-      console.log(`[CLIENT] ${logData.level}: ${logData.message}`, logData.data || '');
-      return new Response(JSON.stringify({ status: 'ok' }), {
-        headers: { "Content-Type": "application/json" }
+      console.log(`[CLIENT] ${logData.level}: ${logData.message}`, logData.data || "");
+      return new Response(JSON.stringify({ status: "ok" }), {
+        headers: { "Content-Type": "application/json" },
       });
     }
-    
+
     return new Response("Not found", { status: 404 });
   };
-  
+
   Deno.serve({ port }, handler);
 }
 
@@ -301,7 +308,7 @@ if (import.meta.main) {
     alias: { h: "help", f: "file", p: "port", w: "watch" },
     default: { watch: true, port: String(DEFAULT_PORT) },
   });
-  
+
   if (args.help) {
     console.log(`Canvas Editor - Interactive FSM-aware canvas
 
@@ -315,7 +322,7 @@ Options:
 `);
     Deno.exit(0);
   }
-  
+
   await startServer({
     port: parseInt(args.port as string, 10),
     file: args.file as string | undefined,

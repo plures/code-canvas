@@ -66,7 +66,7 @@ const activityDoc = await readYaml("sot/state/activity.yaml") as any;
 const rules = await readYaml("sot/rules.yaml") as Rules;
 const current = String(activityDoc.activity ?? life.initial);
 
-const state: State | undefined = (life.states as any[]).find(s => s.id === current);
+const state: State | undefined = (life.states as any[]).find((s) => s.id === current);
 if (!state) {
   console.error(`Invalid current activity: ${current}`);
   Deno.exit(2);
@@ -110,30 +110,32 @@ const checkInvariants = async (invariants: RuleInvariant[], stagedFiles: string[
 
 const checkFileSize = async (invariant: RuleInvariant, stagedFiles: string[]) => {
   if (!invariant.check.patterns) return;
-  
+
   const matchedFiles = new Set<string>();
   for (const pattern of invariant.check.patterns) {
     const matches = await matchers([pattern]);
-    matches.forEach(f => matchedFiles.add(f));
+    matches.forEach((f) => matchedFiles.add(f));
   }
-  
-  const filesToCheck = stagedFiles.filter(f => matchedFiles.has(f));
-  
+
+  const filesToCheck = stagedFiles.filter((f) => matchedFiles.has(f));
+
   for (const file of filesToCheck) {
     try {
       const content = await Deno.readTextFile(file);
-      const lines = content.split('\n').length;
+      const lines = content.split("\n").length;
       const chars = content.length;
-      
+
       if (invariant.check.max_lines && lines > invariant.check.max_lines) {
         console.error(`REFUSAL: ${invariant.description}`);
         console.error(`File ${file} has ${lines} lines, max allowed: ${invariant.check.max_lines}`);
         Deno.exit(1);
       }
-      
+
       if (invariant.check.max_chars && chars > invariant.check.max_chars) {
         console.error(`REFUSAL: ${invariant.description}`);
-        console.error(`File ${file} has ${chars} characters, max allowed: ${invariant.check.max_chars}`);
+        console.error(
+          `File ${file} has ${chars} characters, max allowed: ${invariant.check.max_chars}`,
+        );
         Deno.exit(1);
       }
     } catch (error) {
@@ -144,15 +146,15 @@ const checkFileSize = async (invariant: RuleInvariant, stagedFiles: string[]) =>
 
 const checkYamlSyntax = async (invariant: RuleInvariant, stagedFiles: string[]) => {
   if (!invariant.check.patterns) return;
-  
+
   const matchedFiles = new Set<string>();
   for (const pattern of invariant.check.patterns) {
     const matches = await matchers([pattern]);
-    matches.forEach(f => matchedFiles.add(f));
+    matches.forEach((f) => matchedFiles.add(f));
   }
-  
-  const yamlFiles = stagedFiles.filter(f => matchedFiles.has(f));
-  
+
+  const yamlFiles = stagedFiles.filter((f) => matchedFiles.has(f));
+
   for (const file of yamlFiles) {
     try {
       const content = await Deno.readTextFile(file);
@@ -168,23 +170,27 @@ const checkYamlSyntax = async (invariant: RuleInvariant, stagedFiles: string[]) 
 const checkCommitSize = (invariant: RuleInvariant, stagedFiles: string[]) => {
   if (invariant.check.max_files && stagedFiles.length > invariant.check.max_files) {
     console.error(`REFUSAL: ${invariant.description}`);
-    console.error(`Commit has ${stagedFiles.length} files, max allowed: ${invariant.check.max_files}`);
+    console.error(
+      `Commit has ${stagedFiles.length} files, max allowed: ${invariant.check.max_files}`,
+    );
     Deno.exit(1);
   }
-  
+
   // For max_additions, we'd need git diff --stat, simplified for now
   if (invariant.check.max_additions) {
     const diffCmd = new Deno.Command("git", { args: ["diff", "--cached", "--numstat"] });
     const diffOut = diffCmd.outputSync();
     const diffText = new TextDecoder().decode(diffOut.stdout);
-    const totalAdditions = diffText.split('\n')
+    const totalAdditions = diffText.split("\n")
       .filter(Boolean)
-      .map(line => parseInt(line.split('\t')[0]) || 0)
+      .map((line) => parseInt(line.split("\t")[0]) || 0)
       .reduce((sum, additions) => sum + additions, 0);
-      
+
     if (totalAdditions > invariant.check.max_additions) {
       console.error(`REFUSAL: ${invariant.description}`);
-      console.error(`Commit has ${totalAdditions} additions, max allowed: ${invariant.check.max_additions}`);
+      console.error(
+        `Commit has ${totalAdditions} additions, max allowed: ${invariant.check.max_additions}`,
+      );
       Deno.exit(1);
     }
   }
@@ -192,16 +198,16 @@ const checkCommitSize = (invariant: RuleInvariant, stagedFiles: string[]) => {
 
 const checkPatternMatch = async (invariant: RuleInvariant, stagedFiles: string[]) => {
   if (!invariant.check.patterns || !invariant.check.regex) return;
-  
+
   const matchedFiles = new Set<string>();
   for (const pattern of invariant.check.patterns) {
     const matches = await matchers([pattern]);
-    matches.forEach(f => matchedFiles.add(f));
+    matches.forEach((f) => matchedFiles.add(f));
   }
-  
-  const filesToCheck = stagedFiles.filter(f => matchedFiles.has(f));
+
+  const filesToCheck = stagedFiles.filter((f) => matchedFiles.has(f));
   const regex = new RegExp(invariant.check.regex);
-  
+
   for (const file of filesToCheck) {
     try {
       const content = await Deno.readTextFile(file);
@@ -219,35 +225,37 @@ const checkPatternMatch = async (invariant: RuleInvariant, stagedFiles: string[]
 const checkRuleChores = async (chores: RuleChore[], stagedFiles: string[]) => {
   for (const chore of chores) {
     let shouldTrigger = false;
-    
+
     // Check if any trigger patterns match
     if (chore.when.patterns) {
       const triggerFiles = new Set<string>();
       for (const pattern of chore.when.patterns) {
         const matches = await matchers([pattern]);
-        matches.forEach(f => triggerFiles.add(f));
+        matches.forEach((f) => triggerFiles.add(f));
       }
-      
-      if (stagedFiles.some(f => triggerFiles.has(f))) {
+
+      if (stagedFiles.some((f) => triggerFiles.has(f))) {
         shouldTrigger = true;
       }
     }
-    
+
     // Check content matches if specified
     if (chore.when.content_matches && chore.when.patterns) {
       for (const file of stagedFiles) {
-        if (chore.when.patterns.some(pattern => {
-          // Simple glob-to-regex conversion for basic matching
-          const regexPattern = pattern.replace(/\*\*/g, ".*").replace(/\*/g, "[^/]*");
-          return new RegExp(regexPattern).test(file);
-        })) {
+        if (
+          chore.when.patterns.some((pattern) => {
+            // Simple glob-to-regex conversion for basic matching
+            const regexPattern = pattern.replace(/\*\*/g, ".*").replace(/\*/g, "[^/]*");
+            return new RegExp(regexPattern).test(file);
+          })
+        ) {
           try {
             const content = await Deno.readTextFile(file);
-            const hasContentMatch = chore.when.content_matches.some(match => {
+            const hasContentMatch = chore.when.content_matches.some((match) => {
               const regex = new RegExp(match);
               return regex.test(content);
             });
-            
+
             if (hasContentMatch) {
               shouldTrigger = true;
               break;
@@ -258,25 +266,25 @@ const checkRuleChores = async (chores: RuleChore[], stagedFiles: string[]) => {
         }
       }
     }
-    
+
     if (shouldTrigger) {
       // Check if required changes are present
       const requiredPatterns = [
         ...(chore.then.must_change || []),
-        ...(chore.then.must_also_change || [])
+        ...(chore.then.must_also_change || []),
       ];
-      
+
       const requiredFiles = new Set<string>();
       for (const pattern of requiredPatterns) {
         const matches = await matchers([pattern]);
-        matches.forEach(f => requiredFiles.add(f));
+        matches.forEach((f) => requiredFiles.add(f));
       }
-      
-      const missingRequired = requiredPatterns.filter(pattern => {
+
+      const missingRequired = requiredPatterns.filter((pattern) => {
         const matches = Array.from(requiredFiles);
-        return !stagedFiles.some(f => matches.includes(f));
+        return !stagedFiles.some((f) => matches.includes(f));
       });
-      
+
       if (missingRequired.length > 0) {
         console.error(`REFUSAL: ${chore.description}`);
         console.error(`Missing required changes: ${missingRequired.join(", ")}`);
@@ -286,67 +294,71 @@ const checkRuleChores = async (chores: RuleChore[], stagedFiles: string[]) => {
   }
 };
 
-const checkConstraints = async (constraints: RuleConstraint[], stagedFiles: string[], currentActivity: string) => {
+const checkConstraints = async (
+  constraints: RuleConstraint[],
+  stagedFiles: string[],
+  currentActivity: string,
+) => {
   for (const constraint of constraints) {
     // Skip constraints that don't apply to current activity
     if (constraint.applies_to_activity && constraint.applies_to_activity !== currentActivity) {
       continue;
     }
-    
+
     // Check forbidden patterns
     if (constraint.forbidden_patterns) {
       const forbiddenFiles = new Set<string>();
       const allowedFiles = new Set<string>();
-      
+
       for (const pattern of constraint.forbidden_patterns) {
         const matches = await matchers([pattern]);
-        matches.forEach(f => forbiddenFiles.add(f));
+        matches.forEach((f) => forbiddenFiles.add(f));
       }
-      
+
       if (constraint.allowed_exceptions) {
         for (const pattern of constraint.allowed_exceptions) {
           const matches = await matchers([pattern]);
-          matches.forEach(f => allowedFiles.add(f));
+          matches.forEach((f) => allowedFiles.add(f));
         }
       }
-      
-      const violations = stagedFiles.filter(f => forbiddenFiles.has(f) && !allowedFiles.has(f));
-      
+
+      const violations = stagedFiles.filter((f) => forbiddenFiles.has(f) && !allowedFiles.has(f));
+
       if (violations.length > 0) {
         console.error(`REFUSAL: ${constraint.description}`);
         console.error(`Forbidden files in activity '${currentActivity}': ${violations.join(", ")}`);
         Deno.exit(1);
       }
     }
-    
+
     // Check conditional constraints
     if (constraint.when && constraint.then) {
       let shouldTrigger = false;
-      
+
       if (constraint.when.patterns) {
         const triggerFiles = new Set<string>();
         for (const pattern of constraint.when.patterns) {
           const matches = await matchers([pattern]);
-          matches.forEach(f => triggerFiles.add(f));
+          matches.forEach((f) => triggerFiles.add(f));
         }
-        
-        if (stagedFiles.some(f => triggerFiles.has(f))) {
+
+        if (stagedFiles.some((f) => triggerFiles.has(f))) {
           shouldTrigger = true;
         }
       }
-      
+
       if (shouldTrigger && constraint.then.must_also_change) {
         const requiredFiles = new Set<string>();
         for (const pattern of constraint.then.must_also_change) {
           const matches = await matchers([pattern]);
-          matches.forEach(f => requiredFiles.add(f));
+          matches.forEach((f) => requiredFiles.add(f));
         }
-        
-        const hasRequired = constraint.then.must_also_change.some(pattern => {
+
+        const hasRequired = constraint.then.must_also_change.some((pattern) => {
           const matches = Array.from(requiredFiles);
-          return stagedFiles.some(f => matches.includes(f));
+          return stagedFiles.some((f) => matches.includes(f));
         });
-        
+
         if (!hasRequired) {
           console.error(`REFUSAL: ${constraint.description}`);
           console.error(`Must also change: ${constraint.then.must_also_change.join(", ")}`);
@@ -364,7 +376,7 @@ if (rules.invariants) {
   await checkInvariants(rules.invariants, staged);
 }
 
-// 2) Check constraints (includes activity-specific rules)  
+// 2) Check constraints (includes activity-specific rules)
 if (rules.constraints) {
   await checkConstraints(rules.constraints, staged, current);
 }
@@ -378,26 +390,31 @@ if (rules.chores) {
 
 // 4) Allowed path check from lifecycle FSM
 const allowed = new Set<string>(await matchers(state.allowedPaths ?? ["**/*"]));
-const invalid = staged.filter(f => !allowed.size || !allowed.has(f));
+const invalid = staged.filter((f) => !allowed.size || !allowed.has(f));
 
 if (invalid.length) {
-  console.error(`REFUSAL: files not allowed in activity '${current}':\n` + invalid.map(x=>" - "+x).join("\n"));
+  console.error(
+    `REFUSAL: files not allowed in activity '${current}':\n` +
+      invalid.map((x) => " - " + x).join("\n"),
+  );
   console.error("Switch activity in sot/state/activity.yaml or adjust lifecycle allowedPaths.");
   Deno.exit(1);
 }
 
-// 5) Lifecycle-based chores check  
+// 5) Lifecycle-based chores check
 for (const chore of (state.requiredChores ?? [])) {
   const whenSet = new Set(await matchers(chore.whenAnyMatches));
   const mustSet = new Set(await matchers(chore.mustAlsoChange));
-  const touchedWhen = staged.some(f => whenSet.has(f));
+  const touchedWhen = staged.some((f) => whenSet.has(f));
   if (touchedWhen) {
-    const missing = chore.mustAlsoChange.filter(glob => {
+    const missing = chore.mustAlsoChange.filter((glob) => {
       const m = Array.from(mustSet);
-      return !staged.some(f => m.includes(f));
+      return !staged.some((f) => m.includes(f));
     });
     if (missing.length) {
-      console.error(`REFUSAL: required chores missing for activity '${current}'.\nWhen any of ${chore.whenAnyMatches} change, also change: ${chore.mustAlsoChange}`);
+      console.error(
+        `REFUSAL: required chores missing for activity '${current}'.\nWhen any of ${chore.whenAnyMatches} change, also change: ${chore.mustAlsoChange}`,
+      );
       Deno.exit(1);
     }
   }

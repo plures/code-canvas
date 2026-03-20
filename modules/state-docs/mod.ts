@@ -1,16 +1,16 @@
 /**
  * State-Docs Module
- * 
+ *
  * Provides structured state management for AI-assisted projects.
  * Manages lifecycle, rules, history, and canvas-based documentation.
- * 
+ *
  * Note: This module uses a simplified YAML reader that focuses on
  * the specific structure of State-Docs files. For production use,
  * consider using a full YAML parser library.
  */
 
 function joinPath(...parts: string[]): string {
-  return parts.join('/').replace(/\/+/g, '/');
+  return parts.join("/").replace(/\/+/g, "/");
 }
 
 /**
@@ -18,17 +18,17 @@ function joinPath(...parts: string[]): string {
  */
 function parseActivity(content: string): any {
   const result: any = {};
-  const lines = content.split('\n');
-  
+  const lines = content.split("\n");
+
   for (const line of lines) {
-    if (!line.trim() || line.trim().startsWith('#')) continue;
-    if (!line.includes(':')) continue;
-    
-    const [key, ...valueParts] = line.split(':');
-    const value = valueParts.join(':').trim().replace(/^["']|["']$/g, '');
+    if (!line.trim() || line.trim().startsWith("#")) continue;
+    if (!line.includes(":")) continue;
+
+    const [key, ...valueParts] = line.split(":");
+    const value = valueParts.join(":").trim().replace(/^["']|["']$/g, "");
     result[key.trim()] = value;
   }
-  
+
   return result;
 }
 
@@ -36,69 +36,69 @@ function parseActivity(content: string): any {
  * Parse lifecycle YAML (states and transitions)
  */
 function parseLifecycle(content: string): any {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   const result: any = { states: [], transitions: [] };
   let currentState: any = null;
   let currentTransition: any = null;
-  let currentSection: 'states' | 'transitions' | null = null;
+  let currentSection: "states" | "transitions" | null = null;
   let inAllowedPaths = false;
   let inRequiredChores = false;
   let currentChore: any = null;
-  
+
   for (const line of lines) {
-    if (!line.trim() || line.trim().startsWith('#')) continue;
-    
+    if (!line.trim() || line.trim().startsWith("#")) continue;
+
     const trimmed = line.trim();
     const indent = line.search(/\S/);
-    
+
     // Top-level keys
-    if (trimmed.startsWith('initial:')) {
-      result.initial = trimmed.split(':')[1].trim();
+    if (trimmed.startsWith("initial:")) {
+      result.initial = trimmed.split(":")[1].trim();
       continue;
     }
-    
-    if (trimmed === 'states:') {
-      currentSection = 'states';
+
+    if (trimmed === "states:") {
+      currentSection = "states";
       continue;
     }
-    
-    if (trimmed === 'transitions:') {
-      currentSection = 'transitions';
+
+    if (trimmed === "transitions:") {
+      currentSection = "transitions";
       continue;
     }
-    
+
     // States section
-    if (currentSection === 'states' && trimmed.startsWith('- id:')) {
+    if (currentSection === "states" && trimmed.startsWith("- id:")) {
       if (currentState) result.states.push(currentState);
-      currentState = { id: trimmed.split(':')[1].trim(), allowedPaths: [], requiredChores: [] };
+      currentState = { id: trimmed.split(":")[1].trim(), allowedPaths: [], requiredChores: [] };
       inAllowedPaths = false;
       inRequiredChores = false;
     } else if (currentState) {
-      if (trimmed.startsWith('label:')) {
-        currentState.label = trimmed.split(':')[1].trim();
-      } else if (trimmed === 'allowedPaths:') {
+      if (trimmed.startsWith("label:")) {
+        currentState.label = trimmed.split(":")[1].trim();
+      } else if (trimmed === "allowedPaths:") {
         inAllowedPaths = true;
         inRequiredChores = false;
-      } else if (trimmed === 'requiredChores:') {
+      } else if (trimmed === "requiredChores:") {
         inRequiredChores = true;
         inAllowedPaths = false;
-      } else if (inAllowedPaths && trimmed.startsWith('- ')) {
-        currentState.allowedPaths.push(trimmed.substring(2).replace(/^["']|["']$/g, ''));
+      } else if (inAllowedPaths && trimmed.startsWith("- ")) {
+        currentState.allowedPaths.push(trimmed.substring(2).replace(/^["']|["']$/g, ""));
       } else if (inRequiredChores) {
-        if (trimmed.startsWith('- whenAnyMatches:')) {
+        if (trimmed.startsWith("- whenAnyMatches:")) {
           if (currentChore) currentState.requiredChores.push(currentChore);
-          currentChore = { whenAnyMatches: [], mustAlsoChange: [], currentArray: 'whenAnyMatches' };
-        } else if (trimmed.startsWith('whenAnyMatches:')) {
+          currentChore = { whenAnyMatches: [], mustAlsoChange: [], currentArray: "whenAnyMatches" };
+        } else if (trimmed.startsWith("whenAnyMatches:")) {
           if (currentChore) currentState.requiredChores.push(currentChore);
-          currentChore = { whenAnyMatches: [], mustAlsoChange: [], currentArray: 'whenAnyMatches' };
+          currentChore = { whenAnyMatches: [], mustAlsoChange: [], currentArray: "whenAnyMatches" };
         } else if (currentChore) {
-          if (trimmed.startsWith('mustAlsoChange:')) {
+          if (trimmed.startsWith("mustAlsoChange:")) {
             // Switch to mustAlsoChange array
-            currentChore.currentArray = 'mustAlsoChange';
-          } else if (trimmed.startsWith('- ') && indent > 4) {
-            const value = trimmed.substring(2).replace(/^["']|["']$/g, '');
+            currentChore.currentArray = "mustAlsoChange";
+          } else if (trimmed.startsWith("- ") && indent > 4) {
+            const value = trimmed.substring(2).replace(/^["']|["']$/g, "");
             // Add to current array based on context
-            if (currentChore.currentArray === 'whenAnyMatches') {
+            if (currentChore.currentArray === "whenAnyMatches") {
               currentChore.whenAnyMatches.push(value);
             } else {
               currentChore.mustAlsoChange.push(value);
@@ -107,24 +107,27 @@ function parseLifecycle(content: string): any {
         }
       }
     }
-    
+
     // Transitions section
-    if (currentSection === 'transitions' && trimmed.startsWith('- from:')) {
+    if (currentSection === "transitions" && trimmed.startsWith("- from:")) {
       if (currentTransition) result.transitions.push(currentTransition);
-      currentTransition = { from: trimmed.split(':')[1].trim() };
+      currentTransition = { from: trimmed.split(":")[1].trim() };
     } else if (currentTransition) {
-      if (trimmed.startsWith('to:')) {
-        currentTransition.to = trimmed.split(':')[1].trim();
-      } else if (trimmed.startsWith('guard:')) {
-        currentTransition.guard = trimmed.substring(trimmed.indexOf(':') + 1).trim().replace(/^["']|["']$/g, '');
+      if (trimmed.startsWith("to:")) {
+        currentTransition.to = trimmed.split(":")[1].trim();
+      } else if (trimmed.startsWith("guard:")) {
+        currentTransition.guard = trimmed.substring(trimmed.indexOf(":") + 1).trim().replace(
+          /^["']|["']$/g,
+          "",
+        );
       }
     }
   }
-  
+
   if (currentState) result.states.push(currentState);
   if (currentChore && currentState) currentState.requiredChores.push(currentChore);
   if (currentTransition) result.transitions.push(currentTransition);
-  
+
   return result;
 }
 
@@ -132,80 +135,90 @@ function parseLifecycle(content: string): any {
  * Parse rules YAML
  */
 function parseRules(content: string): any {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   const result: any = { invariants: [], chores: [], constraints: [] };
-  let currentSection: 'invariants' | 'chores' | 'constraints' | null = null;
+  let currentSection: "invariants" | "chores" | "constraints" | null = null;
   let currentItem: any = null;
   let inCheck = false;
   let inWhen = false;
   let inThen = false;
   let currentArrayKey: string | null = null;
-  
+
   for (const line of lines) {
-    if (!line.trim() || line.trim().startsWith('#')) continue;
-    
+    if (!line.trim() || line.trim().startsWith("#")) continue;
+
     const trimmed = line.trim();
-    
-    if (trimmed === 'invariants:') {
-      currentSection = 'invariants';
+
+    if (trimmed === "invariants:") {
+      currentSection = "invariants";
       continue;
     }
-    if (trimmed === 'chores:') {
-      currentSection = 'chores';
+    if (trimmed === "chores:") {
+      currentSection = "chores";
       continue;
     }
-    if (trimmed === 'constraints:') {
-      currentSection = 'constraints';
+    if (trimmed === "constraints:") {
+      currentSection = "constraints";
       continue;
     }
-    
-    if (trimmed.startsWith('- id:')) {
+
+    if (trimmed.startsWith("- id:")) {
       if (currentItem && currentSection) {
         result[currentSection].push(currentItem);
       }
-      currentItem = { id: trimmed.split(':')[1].trim() };
+      currentItem = { id: trimmed.split(":")[1].trim() };
       inCheck = false;
       inWhen = false;
       inThen = false;
       currentArrayKey = null;
     } else if (currentItem) {
-      if (trimmed.startsWith('description:')) {
-        currentItem.description = trimmed.substring(trimmed.indexOf(':') + 1).trim().replace(/^["']|["']$/g, '');
-      } else if (trimmed === 'check:') {
+      if (trimmed.startsWith("description:")) {
+        currentItem.description = trimmed.substring(trimmed.indexOf(":") + 1).trim().replace(
+          /^["']|["']$/g,
+          "",
+        );
+      } else if (trimmed === "check:") {
         currentItem.check = {};
         inCheck = true;
         currentArrayKey = null;
-      } else if (trimmed === 'when:') {
+      } else if (trimmed === "when:") {
         currentItem.when = {};
         inWhen = true;
         currentArrayKey = null;
-      } else if (trimmed === 'then:') {
+      } else if (trimmed === "then:") {
         currentItem.then = {};
         inThen = true;
         currentArrayKey = null;
-      } else if (inCheck && trimmed.includes(':')) {
-        const [key, ...valueParts] = trimmed.split(':');
-        const value = valueParts.join(':').trim();
-        if (key.trim() === 'patterns' || key.trim() === 'forbidden_patterns' || key.trim() === 'allowed_exceptions') {
+      } else if (inCheck && trimmed.includes(":")) {
+        const [key, ...valueParts] = trimmed.split(":");
+        const value = valueParts.join(":").trim();
+        if (
+          key.trim() === "patterns" || key.trim() === "forbidden_patterns" ||
+          key.trim() === "allowed_exceptions"
+        ) {
           currentItem.check[key.trim()] = [];
           currentArrayKey = key.trim();
-        } else if (trimmed.startsWith('- ')) {
+        } else if (trimmed.startsWith("- ")) {
           // Array item - add to current array context
           if (currentArrayKey && currentItem.check[currentArrayKey]) {
-            currentItem.check[currentArrayKey].push(trimmed.substring(2).replace(/^["']|["']$/g, ''));
+            currentItem.check[currentArrayKey].push(
+              trimmed.substring(2).replace(/^["']|["']$/g, ""),
+            );
           }
         } else {
-          currentItem.check[key.trim()] = isNaN(Number(value)) ? value.replace(/^["']|["']$/g, '') : Number(value);
+          currentItem.check[key.trim()] = isNaN(Number(value))
+            ? value.replace(/^["']|["']$/g, "")
+            : Number(value);
           currentArrayKey = null;
         }
       }
     }
   }
-  
+
   if (currentItem && currentSection) {
     result[currentSection].push(currentItem);
   }
-  
+
   return result;
 }
 
@@ -336,7 +349,8 @@ export class StateDocsManager {
     const timestamp = new Date().toISOString();
 
     // Update activity file
-    const activityContent = `activity: ${activity}\nactor: ${actor}\nnote: "${note}"\nsince: "${timestamp}"\n`;
+    const activityContent =
+      `activity: ${activity}\nactor: ${actor}\nnote: "${note}"\nsince: "${timestamp}"\n`;
     const activityPath = joinPath(this.sotPath, "state", "activity.yaml");
     await Deno.writeTextFile(activityPath, activityContent);
 
@@ -360,14 +374,16 @@ export class StateDocsManager {
     }
 
     history.push(historyEntry);
-    const historyYAML = `history:\n${history.map(h => 
-      `  - timestamp: "${h.timestamp}"\n` +
-      `    activity: ${h.activity}\n` +
-      `    actor: ${h.actor}\n` +
-      `    note: "${h.note}"\n` +
-      (h.previousActivity ? `    previousActivity: ${h.previousActivity}\n` : '')
-    ).join('')}`;
-    
+    const historyYAML = `history:\n${
+      history.map((h) =>
+        `  - timestamp: "${h.timestamp}"\n` +
+        `    activity: ${h.activity}\n` +
+        `    actor: ${h.actor}\n` +
+        `    note: "${h.note}"\n` +
+        (h.previousActivity ? `    previousActivity: ${h.previousActivity}\n` : "")
+      ).join("")
+    }`;
+
     await Deno.writeTextFile(historyPath, historyYAML);
   }
 
@@ -376,8 +392,8 @@ export class StateDocsManager {
    */
   async validateTransition(from: string, to: string): Promise<{ valid: boolean; reason?: string }> {
     const lifecycle = await this.getLifecycle();
-    const transition = lifecycle.transitions.find(t => t.from === from && t.to === to);
-    
+    const transition = lifecycle.transitions.find((t) => t.from === from && t.to === to);
+
     if (!transition) {
       return {
         valid: false,
@@ -394,14 +410,14 @@ export class StateDocsManager {
   async isPathAllowed(path: string): Promise<boolean> {
     const activity = await this.getCurrentActivity();
     const lifecycle = await this.getLifecycle();
-    const state = lifecycle.states.find(s => s.id === activity.activity);
+    const state = lifecycle.states.find((s) => s.id === activity.activity);
 
     if (!state) {
       return false;
     }
 
-    return state.allowedPaths.some(pattern => {
-      const regex = new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'));
+    return state.allowedPaths.some((pattern) => {
+      const regex = new RegExp(pattern.replace(/\*\*/g, ".*").replace(/\*/g, "[^/]*"));
       return regex.test(path);
     });
   }
@@ -412,7 +428,7 @@ export class StateDocsManager {
   async getRequiredChores(changedFiles: string[]): Promise<string[]> {
     const activity = await this.getCurrentActivity();
     const lifecycle = await this.getLifecycle();
-    const state = lifecycle.states.find(s => s.id === activity.activity);
+    const state = lifecycle.states.find((s) => s.id === activity.activity);
 
     if (!state || !state.requiredChores) {
       return [];
@@ -420,9 +436,9 @@ export class StateDocsManager {
 
     const required: string[] = [];
     for (const chore of state.requiredChores) {
-      const matches = changedFiles.some(file =>
-        chore.whenAnyMatches.some(pattern => {
-          const regex = new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'));
+      const matches = changedFiles.some((file) =>
+        chore.whenAnyMatches.some((pattern) => {
+          const regex = new RegExp(pattern.replace(/\*\*/g, ".*").replace(/\*/g, "[^/]*"));
           return regex.test(file);
         })
       );
@@ -447,11 +463,11 @@ export class StateDocsValidator {
     try {
       const content = await Deno.readTextFile(path);
       // Try to parse with our parsers
-      if (path.includes('activity.yaml')) {
+      if (path.includes("activity.yaml")) {
         parseActivity(content);
-      } else if (path.includes('lifecycle.yaml')) {
+      } else if (path.includes("lifecycle.yaml")) {
         parseLifecycle(content);
-      } else if (path.includes('rules.yaml')) {
+      } else if (path.includes("rules.yaml")) {
         parseRules(content);
       }
       return { valid: true };
@@ -469,10 +485,10 @@ export class StateDocsValidator {
   static async checkFileSize(
     path: string,
     maxLines: number,
-    maxChars: number
+    maxChars: number,
   ): Promise<{ valid: boolean; lines?: number; chars?: number }> {
     const content = await Deno.readTextFile(path);
-    const lines = content.split('\n').length;
+    const lines = content.split("\n").length;
     const chars = content.length;
 
     return {

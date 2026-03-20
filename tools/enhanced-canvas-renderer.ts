@@ -1,17 +1,22 @@
 #!/usr/bin/env -S deno run -A
 /**
  * Enhanced Canvas Renderer with JSON Canvas Support
- * 
+ *
  * Renders canvases supporting both Code Canvas semantic types and JSON Canvas standard types.
  * Includes support for colors, edge positioning, text nodes, file nodes, link nodes, and groups.
  */
 
-import { ExtendedCanvas, ExtendedCanvasNode, ExtendedCanvasEdge, normalizeCanvas } from "./jsoncanvas-compat.ts";
+import {
+  ExtendedCanvas,
+  ExtendedCanvasEdge,
+  ExtendedCanvasNode,
+  normalizeCanvas,
+} from "./jsoncanvas-compat.ts";
 
 // Color mapping for JSON Canvas preset colors
 const PRESET_COLORS = {
   "1": "#ff6b6b", // red
-  "2": "#ffa726", // orange  
+  "2": "#ffa726", // orange
   "3": "#ffeb3b", // yellow
   "4": "#66bb6a", // green
   "5": "#42a5f5", // cyan/blue
@@ -19,14 +24,17 @@ const PRESET_COLORS = {
 };
 
 // Enhanced node styles supporting both semantic and JSON Canvas types
-const NODE_STYLES: Record<string, { fill: string; stroke: string; strokeWidth: number; strokeDasharray?: string }> = {
+const NODE_STYLES: Record<
+  string,
+  { fill: string; stroke: string; strokeWidth: number; strokeDasharray?: string }
+> = {
   // Code Canvas semantic types
   box: { fill: "#e1f5fe", stroke: "#01579b", strokeWidth: 2 },
   fsm: { fill: "#f3e5f5", stroke: "#4a148c", strokeWidth: 3 },
   control: { fill: "#e8f5e8", stroke: "#1b5e20", strokeWidth: 2 },
   doc: { fill: "#fff3e0", stroke: "#e65100", strokeWidth: 2 },
   database: { fill: "#fce4ec", stroke: "#880e4f", strokeWidth: 2 },
-  
+
   // JSON Canvas standard types
   text: { fill: "#ffffff", stroke: "#666666", strokeWidth: 1 },
   file: { fill: "#f0f8ff", stroke: "#4169e1", strokeWidth: 2 },
@@ -42,7 +50,7 @@ const EDGE_STYLES = {
   tests: { stroke: "#388e3c", strokeDasharray: "3,3" },
   implements: { stroke: "#f57c00", strokeDasharray: "none" },
   docs: { stroke: "#7b1fa2", strokeDasharray: "8,4" },
-  
+
   // Default
   default: { stroke: "#666666", strokeDasharray: "none" },
 };
@@ -78,7 +86,7 @@ export class EnhancedCanvasRenderer {
 
   private getNodeColor(node: ExtendedCanvasNode): { fill: string; stroke: string } {
     const baseStyle = NODE_STYLES[node.type] || NODE_STYLES.box;
-    
+
     if (node.color) {
       // Handle preset colors
       if (PRESET_COLORS[node.color as keyof typeof PRESET_COLORS]) {
@@ -88,7 +96,7 @@ export class EnhancedCanvasRenderer {
           stroke: color,
         };
       }
-      
+
       // Handle hex colors
       if (node.color.startsWith("#")) {
         return {
@@ -97,7 +105,7 @@ export class EnhancedCanvasRenderer {
         };
       }
     }
-    
+
     return baseStyle;
   }
 
@@ -107,18 +115,18 @@ export class EnhancedCanvasRenderer {
       if (PRESET_COLORS[edge.color as keyof typeof PRESET_COLORS]) {
         return PRESET_COLORS[edge.color as keyof typeof PRESET_COLORS];
       }
-      
+
       // Handle hex colors
       if (edge.color.startsWith("#")) {
         return edge.color;
       }
     }
-    
+
     // Use semantic color from kind
     if (edge.kind && EDGE_STYLES[edge.kind]) {
       return EDGE_STYLES[edge.kind].stroke;
     }
-    
+
     return EDGE_STYLES.default.stroke;
   }
 
@@ -126,29 +134,29 @@ export class EnhancedCanvasRenderer {
     const style = this.getNodeColor(node);
     const strokeWidth = NODE_STYLES[node.type]?.strokeWidth || 2;
     const strokeDasharray = NODE_STYLES[node.type]?.strokeDasharray;
-    
+
     let content = "";
     let nodeClass = `node node-${node.type}`;
-    
+
     // Handle different node types
     switch (node.type) {
       case "text":
         content = this.renderTextContent(node);
         break;
-        
+
       case "file":
         content = this.renderFileContent(node);
         nodeClass += " file-node";
         break;
-        
+
       case "link":
         content = this.renderLinkContent(node);
         nodeClass += " link-node";
         break;
-        
+
       case "group":
         return this.renderGroupNode(node);
-        
+
       default:
         // Code Canvas semantic types
         content = this.renderSemanticContent(node);
@@ -157,7 +165,7 @@ export class EnhancedCanvasRenderer {
 
     const rect = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}"
           fill="${style.fill}" stroke="${style.stroke}" stroke-width="${strokeWidth}" rx="5"
-          ${strokeDasharray ? `stroke-dasharray="${strokeDasharray}"` : ''}/>`;
+          ${strokeDasharray ? `stroke-dasharray="${strokeDasharray}"` : ""}/>`;
 
     return `<g class="${nodeClass}" id="node-${node.id}" data-x="${node.x}" data-y="${node.y}">
       ${rect}
@@ -167,22 +175,22 @@ export class EnhancedCanvasRenderer {
 
   private renderTextContent(node: ExtendedCanvasNode): string {
     if (!node.text) return "";
-    
+
     // Simple markdown rendering for text nodes
-    const lines = node.text.split('\n');
+    const lines = node.text.split("\n");
     const textElements: string[] = [];
     let yOffset = 20;
-    
+
     for (const line of lines) {
       if (line.trim() === "") {
         yOffset += 16;
         continue;
       }
-      
+
       let fontSize = "14";
       let fontWeight = "normal";
       let text = line;
-      
+
       // Handle markdown formatting
       if (line.startsWith("# ")) {
         text = line.substring(2);
@@ -196,53 +204,54 @@ export class EnhancedCanvasRenderer {
         text = line.replace(/\*\*/g, "");
         fontWeight = "bold";
       }
-      
+
       textElements.push(`<text x="${node.x + 10}" y="${node.y + yOffset}" 
         font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" 
         fill="#333">${text}</text>`);
-      
+
       yOffset += parseInt(fontSize) + 4;
     }
-    
-    return textElements.join('\n');
+
+    return textElements.join("\n");
   }
 
   private renderFileContent(node: ExtendedCanvasNode): string {
     const fileName = node.file || "file";
-    const displayName = node.label || fileName.split('/').pop() || fileName;
-    
+    const displayName = node.label || fileName.split("/").pop() || fileName;
+
     // File icon
     const icon = `<text x="${node.x + 10}" y="${node.y + 25}" 
       font-family="Arial, sans-serif" font-size="20" fill="#4169e1">📄</text>`;
-    
+
     // File name
     const nameText = `<text x="${node.x + 40}" y="${node.y + 25}" 
       text-anchor="start" dominant-baseline="middle"
       font-family="Arial, sans-serif" font-size="14" font-weight="600" 
       fill="#333">${displayName}</text>`;
-    
+
     // File path (if different from display name)
-    const pathText = fileName !== displayName ? 
-      `<text x="${node.x + 40}" y="${node.y + 45}" 
-        font-family="Arial, sans-serif" font-size="11" fill="#666">${fileName}</text>` : "";
-    
+    const pathText = fileName !== displayName
+      ? `<text x="${node.x + 40}" y="${node.y + 45}" 
+        font-family="Arial, sans-serif" font-size="11" fill="#666">${fileName}</text>`
+      : "";
+
     return icon + nameText + pathText;
   }
 
   private renderLinkContent(node: ExtendedCanvasNode): string {
     const url = node.url || "";
     const displayText = node.label || url;
-    
+
     // Link icon
     const icon = `<text x="${node.x + 10}" y="${node.y + 25}" 
       font-family="Arial, sans-serif" font-size="16" fill="#32cd32">🔗</text>`;
-    
+
     // Link text
     const linkText = `<text x="${node.x + 35}" y="${node.y + 25}" 
       text-anchor="start" dominant-baseline="middle"
       font-family="Arial, sans-serif" font-size="14" fill="#0066cc" 
       text-decoration="underline">${displayText}</text>`;
-    
+
     return icon + linkText;
   }
 
@@ -250,7 +259,7 @@ export class EnhancedCanvasRenderer {
     const label = node.label || node.id;
     const typeIcons: Record<string, string> = {
       fsm: "⚡",
-      control: "🎛️", 
+      control: "🎛️",
       database: "🗄️",
       doc: "📋",
       box: "📦",
@@ -260,18 +269,18 @@ export class EnhancedCanvasRenderer {
       group: "📁",
     };
     const typeIcon = typeIcons[node.type] || "📦";
-    
-    return `<text x="${node.x + node.width/2}" y="${node.y + node.height/2}" 
+
+    return `<text x="${node.x + node.width / 2}" y="${node.y + node.height / 2}" 
       text-anchor="middle" dominant-baseline="middle"
       font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#333">
       <tspan>${typeIcon}</tspan>
-      <tspan x="${node.x + node.width/2}" dy="20">${label}</tspan>
+      <tspan x="${node.x + node.width / 2}" dy="20">${label}</tspan>
     </text>`;
   }
 
   private renderGroupNode(node: ExtendedCanvasNode): string {
     const style = this.getNodeColor(node);
-    
+
     // Group background
     let background = "";
     if (node.background) {
@@ -279,18 +288,19 @@ export class EnhancedCanvasRenderer {
       background = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" 
         fill="url(#bg-${node.id})" opacity="0.3"/>`;
     }
-    
+
     // Group border
     const border = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}"
       fill="transparent" stroke="${style.stroke}" stroke-width="2" 
       stroke-dasharray="8,4" rx="8"/>`;
-    
+
     // Group label
-    const label = node.label ? 
-      `<text x="${node.x + 10}" y="${node.y - 5}" 
+    const label = node.label
+      ? `<text x="${node.x + 10}" y="${node.y - 5}" 
         font-family="Arial, sans-serif" font-size="12" font-weight="bold" 
-        fill="${style.stroke}">${node.label}</text>` : "";
-    
+        fill="${style.stroke}">${node.label}</text>`
+      : "";
+
     return `<g class="node node-group" id="node-${node.id}">
       ${background}
       ${border}
@@ -298,17 +308,19 @@ export class EnhancedCanvasRenderer {
     </g>`;
   }
 
-  private calculateEdgePoints(edge: ExtendedCanvasEdge): { x1: number; y1: number; x2: number; y2: number } {
-    const fromNode = this.canvas.nodes.find(n => n.id === edge.fromNode);
-    const toNode = this.canvas.nodes.find(n => n.id === edge.toNode);
-    
+  private calculateEdgePoints(
+    edge: ExtendedCanvasEdge,
+  ): { x1: number; y1: number; x2: number; y2: number } {
+    const fromNode = this.canvas.nodes.find((n) => n.id === edge.fromNode);
+    const toNode = this.canvas.nodes.find((n) => n.id === edge.toNode);
+
     if (!fromNode || !toNode) {
       return { x1: 0, y1: 0, x2: 0, y2: 0 };
     }
 
     // Calculate connection points based on fromSide/toSide if specified
     let x1: number, y1: number, x2: number, y2: number;
-    
+
     // From point
     switch (edge.fromSide) {
       case "top":
@@ -333,7 +345,7 @@ export class EnhancedCanvasRenderer {
         y1 = fromNode.y + fromNode.height / 2;
         break;
     }
-    
+
     // To point
     switch (edge.toSide) {
       case "top":
@@ -358,25 +370,27 @@ export class EnhancedCanvasRenderer {
         y2 = toNode.y + toNode.height / 2;
         break;
     }
-    
+
     return { x1, y1, x2, y2 };
   }
 
   private renderEdge(edge: ExtendedCanvasEdge): string {
     const points = this.calculateEdgePoints(edge);
     if (points.x1 === 0 && points.y1 === 0) return ""; // Invalid edge
-    
+
     const color = this.getEdgeColor(edge);
     const style = edge.kind ? EDGE_STYLES[edge.kind] : EDGE_STYLES.default;
-    const dashArray = style.strokeDasharray !== "none" ? `stroke-dasharray="${style.strokeDasharray}"` : "";
-    
+    const dashArray = style.strokeDasharray !== "none"
+      ? `stroke-dasharray="${style.strokeDasharray}"`
+      : "";
+
     // Line
     const line = `<line x1="${points.x1}" y1="${points.y1}" x2="${points.x2}" y2="${points.y2}" 
       stroke="${color}" stroke-width="2" ${dashArray}/>`;
-    
+
     // Arrows
     let arrows = "";
-    
+
     // From arrow
     if (edge.fromEnd === "arrow") {
       const angle1 = Math.atan2(points.y2 - points.y1, points.x2 - points.x1);
@@ -385,10 +399,11 @@ export class EnhancedCanvasRenderer {
       const ay1 = points.y1 + size * Math.sin(angle1 - Math.PI / 6);
       const ax2 = points.x1 + size * Math.cos(angle1 + Math.PI / 6);
       const ay2 = points.y1 + size * Math.sin(angle1 + Math.PI / 6);
-      
-      arrows += `<polygon points="${points.x1},${points.y1} ${ax1},${ay1} ${ax2},${ay2}" fill="${color}"/>`;
+
+      arrows +=
+        `<polygon points="${points.x1},${points.y1} ${ax1},${ay1} ${ax2},${ay2}" fill="${color}"/>`;
     }
-    
+
     // To arrow
     if (edge.toEnd === "arrow" || edge.toEnd === undefined) {
       const angle2 = Math.atan2(points.y2 - points.y1, points.x2 - points.x1);
@@ -397,16 +412,18 @@ export class EnhancedCanvasRenderer {
       const ay1 = points.y2 - size * Math.sin(angle2 - Math.PI / 6);
       const ax2 = points.x2 - size * Math.cos(angle2 + Math.PI / 6);
       const ay2 = points.y2 - size * Math.sin(angle2 + Math.PI / 6);
-      
-      arrows += `<polygon points="${points.x2},${points.y2} ${ax1},${ay1} ${ax2},${ay2}" fill="${color}"/>`;
+
+      arrows +=
+        `<polygon points="${points.x2},${points.y2} ${ax1},${ay1} ${ax2},${ay2}" fill="${color}"/>`;
     }
-    
+
     // Label
-    const label = edge.label ? 
-      `<text x="${(points.x1 + points.x2) / 2}" y="${(points.y1 + points.y2) / 2 - 5}" 
-        text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="${color}">${edge.label}</text>` : "";
-    
-    return `<g class="edge edge-${edge.kind || 'default'}" id="edge-${edge.id}">
+    const label = edge.label
+      ? `<text x="${(points.x1 + points.x2) / 2}" y="${(points.y1 + points.y2) / 2 - 5}" 
+        text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="${color}">${edge.label}</text>`
+      : "";
+
+    return `<g class="edge edge-${edge.kind || "default"}" id="edge-${edge.id}">
       ${line}
       ${arrows}
       ${label}
@@ -421,8 +438,8 @@ export class EnhancedCanvasRenderer {
       return 0;
     });
 
-    const nodes = sortedNodes.map(node => this.renderNode(node)).join('\n');
-    const edges = this.canvas.edges.map(edge => this.renderEdge(edge)).join('\n');
+    const nodes = sortedNodes.map((node) => this.renderNode(node)).join("\n");
+    const edges = this.canvas.edges.map((edge) => this.renderEdge(edge)).join("\n");
 
     return `<svg width="${this.canvasWidth}" height="${this.canvasHeight}" 
       xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -451,7 +468,7 @@ export class EnhancedCanvasRenderer {
 
   public renderHTML(title = "Enhanced Canvas"): string {
     const svg = this.renderSVG();
-    
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>

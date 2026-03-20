@@ -9,7 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **State-Docs and ADP Modules** - Dual support squared integration
+- **Repository Best Practices Compliance** (practices 001, 005)
+  - Added `fmt`, `lint` configuration to `deno.json` with `deno fmt` / `deno lint` tasks (practice-001)
+  - Formatted all Deno/TypeScript source files with `deno fmt` for consistent style
+  - Added `.github/workflows/release.yml` calling the Plures reusable release pipeline (practice-005)
+  - `deno task fmt` / `deno task fmt:check` / `deno task lint` convenience tasks
+
+- **State-Docs and ADP Modules**- Dual support squared integration
   - `modules/state-docs/`: Reusable state documentation management module
     - Lifecycle FSM management with state transitions
     - Activity tracking and history

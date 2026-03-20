@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write
 /**
  * Canvas Rendering Engine
- * 
+ *
  * Transforms YAML canvas definitions into visual SVG/HTML representations.
  * Supports all canvas node types and edge relationships with proper styling.
  */
@@ -42,7 +42,7 @@ const NODE_STYLES = {
   fsm: { fill: "#f3e5f5", stroke: "#4a148c", strokeWidth: 3 },
   control: { fill: "#e8f5e8", stroke: "#1b5e20", strokeWidth: 2 },
   doc: { fill: "#fff3e0", stroke: "#e65100", strokeWidth: 2 },
-  database: { fill: "#fce4ec", stroke: "#880e4f", strokeWidth: 2 }
+  database: { fill: "#fce4ec", stroke: "#880e4f", strokeWidth: 2 },
 };
 
 const EDGE_STYLES = {
@@ -50,7 +50,7 @@ const EDGE_STYLES = {
   guards: { stroke: "#1976d2", strokeDasharray: "10,2" },
   tests: { stroke: "#388e3c", strokeDasharray: "3,3" },
   implements: { stroke: "#f57c00", strokeDasharray: "none" },
-  docs: { stroke: "#7b1fa2", strokeDasharray: "8,4" }
+  docs: { stroke: "#7b1fa2", strokeDasharray: "8,4" },
 };
 
 class CanvasRenderer {
@@ -85,14 +85,17 @@ class CanvasRenderer {
   private renderNode(node: CanvasNode): string {
     const style = NODE_STYLES[node.type];
     const label = node.label || node.id;
-    
+
     // Calculate text position (centered)
     const textX = node.x + node.w / 2;
     const textY = node.y + node.h / 2;
 
     // Add reference indicator if present
-    const refIndicator = node.ref ? 
-      `<circle cx="${node.x + node.w - 10}" cy="${node.y + 10}" r="4" fill="#666" title="References: ${node.ref}"/>` : '';
+    const refIndicator = node.ref
+      ? `<circle cx="${node.x + node.w - 10}" cy="${
+        node.y + 10
+      }" r="4" fill="#666" title="References: ${node.ref}"/>`
+      : "";
 
     return `
     <g class="node node-${node.type}" id="node-${node.id}">
@@ -103,7 +106,7 @@ class CanvasRenderer {
             font-family="Arial, sans-serif" font-size="12" fill="#333">
         ${label}
       </text>
-      ${node.type === 'fsm' ? this.renderFsmIndicator(node) : ''}
+      ${node.type === "fsm" ? this.renderFsmIndicator(node) : ""}
     </g>`;
   }
 
@@ -115,12 +118,12 @@ class CanvasRenderer {
   }
 
   private renderEdge(edge: CanvasEdge): string {
-    const fromNode = this.canvas.nodes.find(n => n.id === edge.from);
-    const toNode = this.canvas.nodes.find(n => n.id === edge.to);
-    
+    const fromNode = this.canvas.nodes.find((n) => n.id === edge.from);
+    const toNode = this.canvas.nodes.find((n) => n.id === edge.to);
+
     if (!fromNode || !toNode) {
       console.warn(`Edge references missing node: ${edge.from} -> ${edge.to}`);
-      return '';
+      return "";
     }
 
     // Calculate connection points (center of nodes)
@@ -129,14 +132,16 @@ class CanvasRenderer {
     const x2 = toNode.x + toNode.w / 2;
     const y2 = toNode.y + toNode.h / 2;
 
-    const style = EDGE_STYLES[edge.kind || 'implements'];
-    const strokeDashArray = style.strokeDasharray !== 'none' ? `stroke-dasharray="${style.strokeDasharray}"` : '';
-    
+    const style = EDGE_STYLES[edge.kind || "implements"];
+    const strokeDashArray = style.strokeDasharray !== "none"
+      ? `stroke-dasharray="${style.strokeDasharray}"`
+      : "";
+
     // Create arrowhead
     const angle = Math.atan2(y2 - y1, x2 - x1);
     const arrowLength = 12;
     const arrowAngle = Math.PI / 6;
-    
+
     const arrowX1 = x2 - arrowLength * Math.cos(angle - arrowAngle);
     const arrowY1 = y2 - arrowLength * Math.sin(angle - arrowAngle);
     const arrowX2 = x2 - arrowLength * Math.cos(angle + arrowAngle);
@@ -147,20 +152,24 @@ class CanvasRenderer {
     const labelY = (y1 + y2) / 2 - 10;
 
     return `
-    <g class="edge edge-${edge.kind || 'default'}" id="edge-${edge.from}-${edge.to}">
+    <g class="edge edge-${edge.kind || "default"}" id="edge-${edge.from}-${edge.to}">
       <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" 
             stroke="${style.stroke}" stroke-width="2" ${strokeDashArray}/>
       <polygon points="${x2},${y2} ${arrowX1},${arrowY1} ${arrowX2},${arrowY2}" 
                fill="${style.stroke}"/>
-      ${edge.label ? `<text x="${labelX}" y="${labelY}" text-anchor="middle" 
+      ${
+      edge.label
+        ? `<text x="${labelX}" y="${labelY}" text-anchor="middle" 
                             font-family="Arial, sans-serif" font-size="10" fill="#666" 
-                            background="white">${edge.label}</text>` : ''}
+                            background="white">${edge.label}</text>`
+        : ""
+    }
     </g>`;
   }
 
   renderSvg(): string {
-    const nodes = this.canvas.nodes.map(node => this.renderNode(node)).join('');
-    const edges = this.canvas.edges.map(edge => this.renderEdge(edge)).join('');
+    const nodes = this.canvas.nodes.map((node) => this.renderNode(node)).join("");
+    const edges = this.canvas.edges.map((edge) => this.renderEdge(edge)).join("");
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${this.canvasWidth}" height="${this.canvasHeight}" 
@@ -340,42 +349,44 @@ class CanvasRenderer {
 export async function renderCanvas(canvasPath: string, outputDir: string): Promise<void> {
   try {
     console.log(`🎨 Rendering canvas: ${canvasPath}`);
-    
+
     // Read and parse canvas YAML
     const canvasYaml = await Deno.readTextFile(canvasPath);
     const canvas = yaml.parse(canvasYaml) as Canvas;
-    
+
     // Validate canvas structure
     if (!canvas.nodes || !canvas.edges) {
       throw new Error("Invalid canvas: missing required 'nodes' or 'edges' arrays");
     }
-    
+
     // Create renderer
     const renderer = new CanvasRenderer(canvas);
-    
+
     // Generate SVG
     const svgContent = renderer.renderSvg();
-    
+
     // Generate HTML wrapper
-    const canvasName = basename(canvasPath, '.canvas.yaml');
+    const canvasName = basename(canvasPath, ".canvas.yaml");
     const htmlContent = renderer.renderHtml(svgContent, canvasName);
-    
+
     // Ensure output directory exists
     await ensureDir(outputDir);
-    
+
     // Write output files
     const svgPath = join(outputDir, `${canvasName}.svg`);
     const htmlPath = join(outputDir, `${canvasName}.html`);
-    
+
     await Deno.writeTextFile(svgPath, svgContent);
     await Deno.writeTextFile(htmlPath, htmlContent);
-    
+
     console.log(`✅ Rendered to:`);
     console.log(`   SVG:  ${svgPath}`);
     console.log(`   HTML: ${htmlPath}`);
-    
   } catch (error) {
-    console.error(`❌ Error rendering canvas ${canvasPath}:`, error instanceof Error ? error.message : String(error));
+    console.error(
+      `❌ Error rendering canvas ${canvasPath}:`,
+      error instanceof Error ? error.message : String(error),
+    );
     Deno.exit(1);
   }
 }
@@ -383,7 +394,7 @@ export async function renderCanvas(canvasPath: string, outputDir: string): Promi
 // CLI interface
 if (import.meta.main) {
   const args = Deno.args;
-  
+
   if (args.length === 0) {
     console.log(`🎨 Canvas Renderer
     
@@ -397,23 +408,26 @@ Examples:
 `);
     Deno.exit(1);
   }
-  
-  const outputDir = args[1] || 'output';
-  
-  if (args[0] === '--all') {
+
+  const outputDir = args[1] || "output";
+
+  if (args[0] === "--all") {
     // Render all canvas files
-    console.log('🎨 Rendering all canvas files...');
-    
+    console.log("🎨 Rendering all canvas files...");
+
     try {
-      for await (const entry of Deno.readDir('sot/canvas')) {
-        if (entry.isFile && entry.name.endsWith('.canvas.yaml')) {
-          const canvasPath = join('sot/canvas', entry.name);
+      for await (const entry of Deno.readDir("sot/canvas")) {
+        if (entry.isFile && entry.name.endsWith(".canvas.yaml")) {
+          const canvasPath = join("sot/canvas", entry.name);
           await renderCanvas(canvasPath, outputDir);
         }
       }
-      console.log('🎉 All canvases rendered successfully!');
+      console.log("🎉 All canvases rendered successfully!");
     } catch (error) {
-      console.error('❌ Error rendering canvases:', error instanceof Error ? error.message : String(error));
+      console.error(
+        "❌ Error rendering canvases:",
+        error instanceof Error ? error.message : String(error),
+      );
       Deno.exit(1);
     }
   } else {

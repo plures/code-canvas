@@ -20,7 +20,7 @@ import { StateDocsManager, StateDocsValidator } from "./mod.ts";
 Deno.test("StateDocsManager - getCurrentActivity", async () => {
   const manager = new StateDocsManager("../../sot");
   const activity = await manager.getCurrentActivity();
-  
+
   assertExists(activity);
   assertExists(activity.activity);
   assertExists(activity.actor);
@@ -30,7 +30,7 @@ Deno.test("StateDocsManager - getCurrentActivity", async () => {
 Deno.test("StateDocsManager - getLifecycle", async () => {
   const manager = new StateDocsManager("../../sot");
   const lifecycle = await manager.getLifecycle();
-  
+
   assertExists(lifecycle);
   assertExists(lifecycle.initial);
   assertExists(lifecycle.states);
@@ -41,7 +41,7 @@ Deno.test("StateDocsManager - getLifecycle", async () => {
 Deno.test("StateDocsManager - getRules", async () => {
   const manager = new StateDocsManager("../../sot");
   const rules = await manager.getRules();
-  
+
   assertExists(rules);
   assertExists(rules.invariants);
   assertEquals(Array.isArray(rules.invariants), true);
@@ -49,11 +49,11 @@ Deno.test("StateDocsManager - getRules", async () => {
 
 Deno.test("StateDocsManager - isPathAllowed", async () => {
   const manager = new StateDocsManager("../../sot");
-  
+
   // In implementation activity, src/** should be allowed
   const srcAllowed = await manager.isPathAllowed("src/app.ts");
   const testsAllowed = await manager.isPathAllowed("tests/app.test.ts");
-  
+
   // Both should be true in implementation state
   assertEquals(typeof srcAllowed, "boolean");
   assertEquals(typeof testsAllowed, "boolean");
@@ -61,10 +61,10 @@ Deno.test("StateDocsManager - isPathAllowed", async () => {
 
 Deno.test("StateDocsManager - getRequiredChores", async () => {
   const manager = new StateDocsManager("../../sot");
-  
+
   // Changing src files should require test changes
   const chores = await manager.getRequiredChores(["src/app.ts"]);
-  
+
   assertEquals(Array.isArray(chores), true);
 });
 

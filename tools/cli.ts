@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run -A
 /**
  * Code Canvas CLI - Unified command-line interface
- * 
+ *
  * Provides intuitive commands for all Code Canvas operations:
  * - canvas: Render and manage visual documentation
  * - activity: Switch and manage FSM states
@@ -56,7 +56,7 @@ Examples:
 
   // Use enhanced renderer if requested or if format requires it
   const useEnhanced = parsed.enhanced || parsed.jsoncanvas || parsed.format === "html";
-  
+
   if (useEnhanced) {
     // Use enhanced renderer with JSON Canvas support
     const cmd = ["deno", "run", "-A", "tools/canvas-render.ts"];
@@ -64,11 +64,11 @@ Examples:
     if (parsed.file) cmd.push("--file", parsed.file);
     if (parsed.output) cmd.push("--output", parsed.output);
     if (parsed.format) cmd.push("--format", parsed.format);
-    
+
     const process = new Deno.Command(cmd[0], {
       args: cmd.slice(1),
       stdin: "inherit",
-      stdout: "inherit", 
+      stdout: "inherit",
       stderr: "inherit",
     });
     const { code } = await process.output();
@@ -90,7 +90,7 @@ Examples:
 
 async function canvasList(): Promise<number> {
   console.log("📄 Canvas files:\n");
-  
+
   try {
     for await (const entry of Deno.readDir("sot/canvas")) {
       if (entry.isFile && entry.name.endsWith(".canvas.yaml")) {
@@ -176,8 +176,12 @@ Examples:
   }
 
   const cmd = [
-    "deno", "run", "-A", "tools/fsm-manager.ts",
-    "--to", parsed.to,
+    "deno",
+    "run",
+    "-A",
+    "tools/fsm-manager.ts",
+    "--to",
+    parsed.to,
   ];
   if (parsed.actor) cmd.push("--actor", parsed.actor);
   if (parsed.note) cmd.push("--note", parsed.note);
@@ -322,7 +326,7 @@ Creates:
   console.log("  1. Run: deno task prepare-hooks");
   console.log("  2. Edit: sot/state/activity.yaml");
   console.log("  3. Validate: canvas validate check");
-  
+
   return 0;
 }
 

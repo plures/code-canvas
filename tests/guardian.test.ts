@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno test --allow-read --allow-write --allow-run
 /**
  * Unit Tests for Guardian System
- * 
+ *
  * Tests core functionality of the guardian validation system,
  * FSM manager, and schema validation.
  */
@@ -34,12 +34,12 @@ Deno.test("FSM Manager - Status command", async () => {
   const command = new Deno.Command("deno", {
     args: ["run", "-A", "tools/fsm-manager.ts", "--status"],
     stdout: "piped",
-    stderr: "piped"
+    stderr: "piped",
   });
-  
+
   const result = await command.output();
   assertEquals(result.code, 0);
-  
+
   const output = new TextDecoder().decode(result.stdout);
   assertEquals(output.includes("📍 Current Activity:"), true);
 });
@@ -49,13 +49,13 @@ Deno.test("Schema Validator - Configuration validation", async () => {
   const command = new Deno.Command("deno", {
     args: ["run", "-A", "tools/schema-validator.ts"],
     stdout: "piped",
-    stderr: "piped"
+    stderr: "piped",
   });
-  
+
   const result = await command.output();
   // Should succeed with warnings (schema files don't have mappings)
   assertEquals(result.code, 0);
-  
+
   const output = new TextDecoder().decode(result.stdout);
   assertEquals(output.includes("🔍 Schema Validation Results"), true);
   assertEquals(output.includes("🎉 All configuration files are valid!"), true);
@@ -65,9 +65,9 @@ Deno.test("Schema Validator - Activity file validation", async () => {
   const command = new Deno.Command("deno", {
     args: ["run", "-A", "tools/schema-validator.ts", "sot/state/activity.yaml"],
     stdout: "piped",
-    stderr: "piped"
+    stderr: "piped",
   });
-  
+
   const result = await command.output();
   assertEquals(result.code, 0);
 });
@@ -77,12 +77,12 @@ Deno.test("Canvas Renderer - Help command", async () => {
   const command = new Deno.Command("deno", {
     args: ["run", "-A", "tools/canvas-renderer.ts"],
     stdout: "piped",
-    stderr: "piped"
+    stderr: "piped",
   });
-  
+
   const result = await command.output();
   assertEquals(result.code, 1); // Should exit 1 with usage message
-  
+
   const output = new TextDecoder().decode(result.stdout);
   assertEquals(output.includes("🎨 Canvas Renderer"), true);
 });
@@ -91,13 +91,13 @@ Deno.test("Canvas Renderer - Help command", async () => {
 Deno.test("Project Structure - Core files exist", async () => {
   const coreFiles = [
     "sot/lifecycle.yaml",
-    "sot/rules.yaml", 
+    "sot/rules.yaml",
     "sot/state/activity.yaml",
     "tools/guardian.ts",
     "tools/fsm-manager.ts",
     "tools/schema-validator.ts",
     "tools/canvas-renderer.ts",
-    "deno.json"
+    "deno.json",
   ];
 
   for (const filePath of coreFiles) {
@@ -113,7 +113,7 @@ Deno.test("Project Structure - Core files exist", async () => {
 // Test YAML parsing
 Deno.test("YAML Configuration - Basic parsing", async () => {
   const { parse } = await import("https://deno.land/std@0.208.0/yaml/mod.ts");
-  
+
   // Test lifecycle.yaml parsing
   const lifecycleContent = await Deno.readTextFile("sot/lifecycle.yaml");
   const lifecycle = parse(lifecycleContent);
@@ -121,7 +121,7 @@ Deno.test("YAML Configuration - Basic parsing", async () => {
   assertEquals(lifecycle !== null, true);
   assertEquals("initial" in lifecycle, true);
   assertEquals("states" in lifecycle, true);
-  
+
   // Test rules.yaml parsing
   const rulesContent = await Deno.readTextFile("sot/rules.yaml");
   const rules = parse(rulesContent);
@@ -134,12 +134,12 @@ Deno.test("Integration - Guardian validation passes", async () => {
   const command = new Deno.Command("deno", {
     args: ["run", "-A", "tools/guardian.ts"],
     stdout: "piped",
-    stderr: "piped"
+    stderr: "piped",
   });
-  
+
   const result = await command.output();
   assertEquals(result.code, 0);
-  
+
   const output = new TextDecoder().decode(result.stdout);
   assertEquals(output.includes("guardian: OK"), true);
 });
