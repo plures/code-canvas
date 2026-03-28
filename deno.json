@@ -29,17 +29,32 @@
     "semiColons": true,
     "singleQuote": false,
     "proseWrap": "preserve",
-    "include": ["tools/", "tests/", "modules/"],
-    "exclude": ["tools/canvas-editor.html"]
+    "include": [
+      "tools/",
+      "tests/",
+      "modules/"
+    ],
+    "exclude": [
+      "tools/canvas-editor.html"
+    ]
   },
   "lint": {
-    "include": ["tools/", "tests/", "modules/"],
-    "exclude": ["tools/canvas-editor.html"],
+    "include": [
+      "tools/",
+      "tests/",
+      "modules/"
+    ],
+    "exclude": [
+      "tools/canvas-editor.html"
+    ],
     "rules": {
-      "tags": ["recommended"]
+      "tags": [
+        "recommended"
+      ]
     }
   },
   "compilerOptions": {
     "strict": true
-  }
+  },
+  "version": "undefined.1.0"
 }
