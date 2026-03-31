@@ -1,3 +1,9 @@
+## [undefined.1.1] — 2026-03-31
+
+- fix(lifecycle): rewrite v9 — apply suggestions, merge, no nudges (b4439b5)
+- chore: license BSL 1.1 (commercial product) (a0daff9)
+- chore: add copilot-pr-lifecycle.yml workflow (c03d623)
+
 ## [undefined.1.0] — 2026-03-28
 
 - fix: align release workflow with design-dojo pattern (add packages:write, bump input) (c6f02e7)
