@@ -1,3 +1,8 @@
+## [0.0.1] — 2026-04-17
+
+- fix(lifecycle): label-based retry counter + CI fix priority (6e281bf)
+- ci: centralize lifecycle — event-driven with schedule guard (4d323ee)
+
 ## [undefined.1.2] — 2026-03-31
 
 - fix(lifecycle): v9.1 — fix QA dispatch (client_payload as JSON object) (73577fd)
