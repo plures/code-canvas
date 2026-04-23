@@ -1,97 +1,155 @@
-# AI Agent Instructions for Code Canvas
+# Copilot Instructions
 
-## Core Architecture
+## Organization Standards
 
-Code Canvas is an **FSM-controlled AI guardrails system** that enforces lifecycle-based development with strict file access patterns. The key insight: `sot/` (Single Source of Truth) contains small, focused documents that fit in AI context windows.
+You are working in the **plures** organization. Before making changes, understand our standards and architecture.
 
-### Critical FSM Workflow
+### Source of Truth
+- **Development guide:** https://github.com/plures/development-guide
+  - `standards/` — commit conventions, CI/CD, PR workflow, repo setup, code style
+  - `practices/` — copilot delegation, merge sweeps, local-first development
+  - `design/` — architecture decisions, design patterns
+  - `lessons-learned/` — past mistakes to avoid (READ THESE)
 
-1. **Always check current activity**: Read `sot/state/activity.yaml` first - determines what files you can modify
-2. **Respect lifecycle constraints**: `sot/lifecycle.yaml` defines allowed paths per state (design/implementation/release)  
-3. **Honor required chores**: Changing designs→tests, src→tests, package.json→CHANGELOG.md are enforced
-4. **Use guardian validation**: `deno task validate` before commits - catches rule violations early
+### Architecture Principles (NON-NEGOTIABLE)
 
-### State Transitions
+**Praxis-First Development** — decisions go through Praxis rules, not bare if/else:
+- Decision ledger (ADRs) with evidence tables — tested facts, unknowns marked
+- Expectations as constraints — severity = error, check functions enforce correctness
+- Model before code — expand types, wire fetcher, then write expectations
+- Never ship warnings — if it's wrong, it's an error
 
-- **design**: Can modify docs, designs, canvas, tests, tools, README.md
-- **implementation**: Can modify src, tests, sot, tools, docs, CHANGELOG.md (NOT README.md)
-- **release**: Limited to CHANGELOG.md, package.json, sot
+**Structured Observability** — tracing macros, not println/dbg:
+- Every I/O boundary logged with structured spans
+- Use `tracing::instrument` (Rust) or OpenTelemetry (TypeScript)
+- NO bare `println!`, `dbg!`, or `console.log` in production code
 
-**Switch activities** in `sot/state/activity.yaml` when hitting path restrictions.
+**Reactive Architecture** — procedures over code, events over polling:
+- PluresDB procedures for orchestration
+- Event-driven workflows, not cron jobs
+- Scheduled tasks are a reliability anti-pattern
 
-## Canvas System Architecture
+**Design-Dojo Mandate** — ALL UI must use design-dojo components:
+- No raw HTML elements (`<button>`, `<aside>`, `<nav>`) in application code
+- Every UI component must come from `@plures/design-dojo`
+- If a component doesn't exist in design-dojo, build it there first, then import
+- Never work around a missing component by building it locally
+- Schema-driven: components generated from praxis rules and PluresDB schemas
 
-### Dual Format Support
-- **YAML Canvas** (`.canvas.yaml`): Native format with `w/h` properties and FSM refs
-- **JSON Canvas** (`.canvas`): Industry standard with `width/height` properties for Obsidian interop
+**Praxis-Composed Applications** — apps MUST be wholly composed of praxis primitives:
+- Every decision = a Rule with a Contract
+- Every state change = an Event processed by the Engine
+- Every UI component = design-dojo, generated from schemas
+- Every data operation = PluresDB graph write, automatic via praxis persistence layer
+- No imperative logic. No ad-hoc conditionals. No raw HTML.
 
-Key files:
-- `tools/jsoncanvas-compat.ts`: Bi-directional conversion with property aliasing
-- `tools/canvas-server-v2.ts`: Interactive editor with drag-and-drop (port 8082)
-- `tools/enhanced-canvas-renderer.ts`: Multi-format SVG generation
+### Automation Rules (ABSOLUTE)
 
-### Canvas Node Types
+**Automation changes go straight to code.** Never create GitHub issues for workflow/CI/release pipeline/lifecycle changes. Implement directly — commit and push. Issues are for feature work and bugs only. This is non-negotiable and has been violated repeatedly — stop.
+
+**Zero nudges. Ever.** No `@copilot` comments, no retry comments, no "please implement" comments, no `createComment` calls on issues. Nudges don't work and pollute history. If stalled: close → recreate → reassign.
+
+**Single assignment authority.** Only the lifecycle workflow assigns Copilot. Never assign manually from other workflows or scripts (race condition evidence from netops-toolkit #20/#21).
+
+**Roadmap-aware versioning.** The release pipeline supports `target_version` input for milestone-driven releases. When a milestone closes, the lifecycle workflow extracts the semver from the milestone title and triggers a release at that exact version. Do NOT manually bump versions.
+
+### Plures Stack Reference
+
+| Component | Purpose | Language | Key Features |
+|-----------|---------|----------|--------------|
+| **pluresdb** | Distributed database | Rust | CRDT store, HNSW vectors, reactive procedures, P2P sync |
+| **praxis** | Business logic engine | Rust/TypeScript | Expectations, ADRs, decision ledger, event lifecycle |
+| **plureslm** | Long-term memory | TypeScript | Native embeddings (BGE-small), MCP server, graph traversal |
+| **chronos** | State chronicle | TypeScript | Causal diffs, temporal queries, PluresDB writer |
+| **unum** | Reactive bindings | TypeScript | Svelte 5 bindings for PluresDB |
+| **design-dojo** | UI component library | Svelte 5 | Sidebar, StatusBar, Button, Tabs, ActivityBar, TitleBar |
+| **pares-agens** | Agent runtime | Rust | Telegram, cerebellum, delegation, PluresDB memory |
+| **pares-radix** | Application shell | TypeScript | Plugin loader, inference engine, UX contracts |
+| **pares-modulus** | Plugin registry | TypeScript | Gated submissions, manifest validation, security scan |
+
+### Commit Standards (MANDATORY)
+
+**Conventional Commits** — all commit messages MUST follow:
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`, `build`
+
+**Breaking changes:** add `!` after type or `BREAKING CHANGE:` in footer
+
+**PR Titles** — use conventional commit format (they become the squash commit message)
+
+**Squash merge** — always. Clean single commit on `main`
+
+**Tests required** — all new features need tests. All bug fixes need a failing test first.
+
+### Release Pipeline
+
+Reusable release workflow from `plures/.github`:
+
 ```yaml
-nodes:
-  - type: fsm     # Links to sot/lifecycle.yaml
-  - type: control # UI components with props
-  - type: database # Data stores
-  - type: doc     # Design references
-  - type: text    # JSON Canvas text nodes
-  - type: file    # JSON Canvas file attachments
-  - type: group   # JSON Canvas containers
+name: Release
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        type: choice
+        options: [patch, minor, major]
+      target_version:
+        description: 'Exact version (e.g. 1.0.0). Overrides bump logic.'
+        type: string
+        required: false
+jobs:
+  release:
+    uses: plures/.github/.github/workflows/release-reusable.yml@main
+    with:
+      bump: ${{ inputs.bump || '' }}
+      target_version: ${{ inputs.target_version || '' }}
+    secrets: inherit
 ```
 
-## Essential Commands
+The pipeline auto-detects project type, syncs ALL version files (Cargo.toml, package.json, tauri.conf.json, deno.json), and publishes to registries.
 
-```bash
-# FSM & Validation
-deno task validate                    # Guardian pre-commit validation
-deno run -A tools/guardian.ts        # Manual validation
+Version bumps are automatic from conventional commits. Milestone-driven releases use `target_version`.
 
-# Canvas Operations  
-deno run -A tools/canvas-server-v2.ts --file canvas.canvas --port 8080  # Interactive editor
-deno run -A tools/enhanced-cli.ts render input.canvas                   # Auto-detect format
-deno run -A tools/enhanced-cli.ts render --format json input.yaml       # Force conversion
+### Copilot Issue Requirements (ADR-0004)
 
-# State Management
-deno run -A tools/fsm-manager.ts     # Lifecycle utilities
-```
+For Copilot SWE agent to process issues, BOTH are required:
+- **Label**: At least one label (e.g., `enhancement`, `bug`)
+- **Type**: Issue type set (Feature, Bug, Task)
 
-## Guardian Rules Engine
+Without both, Copilot **silently cancels**. No error, no notification — just nothing happens.
 
-Located in `sot/rules.yaml` with TypeScript validation in `tools/guardian.ts`:
+### What NOT to Do
 
-- **File size limits**: Small docs (200 lines, 8000 chars), large docs (800 lines, 60000 chars)
-- **Commit size limits**: Max 2500 additions, 25 files per commit  
-- **YAML syntax validation**: All .yaml files must parse correctly
-- **Required chores**: Design changes → test updates, src changes → test updates
+**Code Quality:**
+- ❌ NO `#[allow(...)]` or `#![allow(...)]` suppressions — fix the underlying issue
+- ❌ NO `// eslint-disable` — fix the lint violation
+- ❌ NO bare `println!`, `dbg!`, or `console.log` in production code — use structured tracing
+- ❌ NO manual version bumps — release workflow handles this
+- ❌ NO raw HTML elements in app code — use design-dojo components
 
-## Property Aliasing Pattern
+**Process:**
+- ❌ NO sub-PRs that depend on other PRs — merge parent first
+- ❌ NO touching files outside the requested scope
+- ❌ NO skipping tests or adding `#[ignore]`/`skip` to make CI pass
+- ❌ NO creating GitHub issues for automation/workflow/CI changes — implement directly
+- ❌ NO nudging Copilot with comments — close and recreate if stalled
 
-Critical for JSON Canvas compatibility - always use fallback chains:
-```typescript
-const width = node.w || node.width || 120;
-const height = node.h || node.height || 60;
-const fromNode = edge.from || edge.fromNode;
-```
+**Architecture:**
+- ❌ NO cron jobs for orchestration — use reactive procedures
+- ❌ NO polling loops — subscribe to events
+- ❌ NO bare if/else business logic — use Praxis expectations
+- ❌ NO local UI components — contribute to design-dojo first
 
-## File Organization Conventions
-
-- `sot/`: Single source of truth - keep documents small and focused
-- `tools/`: Deno CLI utilities with `-A` permissions
-- `tests/`: Markdown-based test specifications following Given/When/Then pattern
-- `docs/`: User documentation (allowed in design state)
-- `.githooks/pre-commit`: Installed via `deno task prepare-hooks`
-
-## Development Patterns
-
-1. **Start with activity check**: Verify current state allows your intended changes
-2. **Design-first workflow**: Create canvas diagrams before implementation
-3. **Tests-as-documentation**: Write markdown tests showing expected behavior
-4. **Small commits**: Guardian enforces reasonable commit sizes
-5. **State-aware development**: Switch activities rather than fighting path restrictions
-
-## Canvas-FSM Integration
-
-Canvas nodes can reference FSM states via `ref: "sot/lifecycle.yaml"` - this creates visual representations of project lifecycle that stay synchronized with actual state machine definitions.
+### When in Doubt
+1. Check the development guide
+2. Look for existing ADRs in `.praxis/decisions/`
+3. Ask before breaking established patterns
