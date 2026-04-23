@@ -2,7 +2,7 @@
   "name": "code-canvas-vscode",
   "displayName": "Code Canvas",
   "description": "Visual canvas editor with Svelte 5 + XState FSM support",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "publisher": "code-canvas",
   "engines": {
     "vscode": "^1.85.0"
